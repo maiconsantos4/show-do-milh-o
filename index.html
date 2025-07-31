@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        /* Base styles for body and game container */
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* Darker, richer background */
@@ -35,7 +36,16 @@
             position: relative;
             overflow: hidden;
             z-index: 1;
+            /* Responsive padding for smaller screens */
+            padding: 2rem 1.5rem;
         }
+        @media (min-width: 768px) {
+            .game-container {
+                padding: 3.5rem;
+            }
+        }
+
+        /* Light pulse animation for game container */
         .game-container::before {
             content: '';
             position: absolute;
@@ -52,13 +62,20 @@
             100% { transform: scale(1.3); opacity: 0.2; }
         }
 
+        /* Title styling */
         .title {
-            font-size: 4rem; /* Even larger title */
+            font-size: 3rem; /* Even larger title */
             font-weight: 900;
             color: #f1c40f; /* Brighter gold */
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-            margin-bottom: 2.5rem;
+            margin-bottom: 2rem;
             letter-spacing: 2px;
+        }
+        @media (min-width: 768px) {
+            .title {
+                font-size: 4rem;
+                margin-bottom: 2.5rem;
+            }
         }
 
         /* Start Screen Specific Styles */
@@ -75,19 +92,26 @@
             margin-bottom: 2rem;
         }
         .character-option {
-            width: 120px;
-            height: 120px;
+            width: 100px; /* Smaller for mobile */
+            height: 100px;
             background-color: #3498db;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
+            font-size: 2rem;
             color: white;
             border: 5px solid transparent;
             cursor: pointer;
             transition: all 0.3s ease-in-out;
             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4), 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        @media (min-width: 640px) {
+            .character-option {
+                width: 120px;
+                height: 120px;
+                font-size: 2.5rem;
+            }
         }
         .character-option:hover {
             transform: translateY(-5px) scale(1.05);
@@ -102,15 +126,21 @@
         #startButton {
             background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient */
             color: white;
-            padding: 1.5rem 4rem; /* Larger button */
+            padding: 1.2rem 3rem; /* Larger button */
             border-radius: 1.5rem; /* More rounded */
-            font-size: 1.8rem; /* Larger font */
+            font-size: 1.5rem; /* Larger font */
             font-weight: bold;
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
             transition: all 0.3s ease-in-out;
             border: none;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+        @media (min-width: 640px) {
+            #startButton {
+                padding: 1.5rem 4rem;
+                font-size: 1.8rem;
+            }
         }
         #startButton:hover {
             background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
@@ -121,13 +151,13 @@
         /* Game Screen Specific Styles */
         .question-box {
             background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); /* Darker blue-gray gradient */
-            padding: 2.5rem;
+            padding: 2rem;
             border-radius: 1.5rem; /* More rounded */
-            margin-bottom: 2.5rem;
-            font-size: 1.8rem; /* Larger font */
+            margin-bottom: 2rem;
+            font-size: 1.5rem; /* Larger font */
             font-weight: bold;
             color: #ecf0f1;
-            min-height: 160px; /* Taller */
+            min-height: 120px; /* Taller */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -138,6 +168,14 @@
             transform: translateY(30px);
             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
         }
+        @media (min-width: 640px) {
+            .question-box {
+                padding: 2.5rem;
+                margin-bottom: 2.5rem;
+                font-size: 1.8rem;
+                min-height: 160px;
+            }
+        }
         .question-box.show {
             opacity: 1;
             transform: translateY(0);
@@ -146,20 +184,22 @@
         .options-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 1.5rem; /* Larger gap */
-            margin-bottom: 3rem;
+            gap: 1rem; /* Larger gap */
+            margin-bottom: 2rem;
         }
         @media (min-width: 640px) {
             .options-grid {
                 grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                margin-bottom: 3rem;
             }
         }
         .option-button {
             background: linear-gradient(180deg, #3498db 0%, #2980b9 100%); /* Blue gradient */
             color: white;
-            padding: 1.5rem 2rem; /* Larger padding */
+            padding: 1rem 1.5rem; /* Larger padding */
             border-radius: 1rem; /* More rounded */
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease-in-out;
@@ -169,6 +209,12 @@
             overflow: hidden;
             opacity: 0;
             transform: translateY(30px);
+        }
+        @media (min-width: 640px) {
+            .option-button {
+                padding: 1.5rem 2rem;
+                font-size: 1.3rem;
+            }
         }
         .option-button.show {
             opacity: 1;
@@ -204,19 +250,27 @@
         .control-buttons button, .lifeline-buttons button {
             background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); /* Purple gradient */
             color: white;
-            padding: 1.2rem 2.5rem;
+            padding: 1rem 2rem;
             border-radius: 1rem;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease-in-out;
             border: none;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            margin: 0 0.8rem;
+            margin: 0 0.5rem;
             display: inline-flex; /* For icon + text alignment */
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
+        }
+        @media (min-width: 640px) {
+            .control-buttons button, .lifeline-buttons button {
+                padding: 1.2rem 2.5rem;
+                font-size: 1.3rem;
+                margin: 0 0.8rem;
+                gap: 10px;
+            }
         }
         .control-buttons button:hover, .lifeline-buttons button:hover:not(.disabled) {
             background: linear-gradient(180deg, #8e44ad 0%, #9b59b6 100%);
@@ -229,21 +283,44 @@
             background: linear-gradient(180deg, #6b46c1 0%, #5a32a3 100%); /* Darker purple when disabled */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+        /* Animation for lifeline usage */
+        .lifeline-buttons button.used-animation {
+            animation: lifeline-pulse 0.5s ease-out;
+        }
+        @keyframes lifeline-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
 
         .message {
-            font-size: 1.6rem; /* Larger font */
-            margin-top: 2rem;
+            font-size: 1.4rem; /* Larger font */
+            margin-top: 1.5rem;
             font-weight: bold;
-            min-height: 50px;
+            min-height: 40px;
             color: #ecf0f1;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
+        @media (min-width: 640px) {
+            .message {
+                font-size: 1.6rem;
+                margin-top: 2rem;
+                min-height: 50px;
+            }
+        }
         .prize-display {
-            font-size: 2.8rem; /* Even larger prize display */
+            font-size: 2.2rem; /* Even larger prize display */
             font-weight: 900;
-            margin-bottom: 2.5rem;
+            margin-bottom: 2rem;
             color: #f1c40f; /* Brighter gold */
             text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+        @media (min-width: 640px) {
+            .prize-display {
+                font-size: 2.8rem;
+                margin-bottom: 2.5rem;
+            }
         }
         .hidden {
             display: none;
@@ -296,13 +373,18 @@
         }
         .volume-control input[type="range"] {
             -webkit-appearance: none;
-            width: 100px;
+            width: 80px; /* Smaller for mobile */
             height: 8px;
             background: #4a5568;
             border-radius: 5px;
             outline: none;
             opacity: 0.7;
             transition: opacity .2s;
+        }
+        @media (min-width: 640px) {
+            .volume-control input[type="range"] {
+                width: 100px;
+            }
         }
         .volume-control input[type="range"]:hover {
             opacity: 1;
@@ -360,31 +442,52 @@
 
         /* Prize Ladder */
         .prize-ladder-container {
-            position: absolute;
+            position: fixed; /* Changed to fixed for better mobile positioning */
             top: 50%;
-            left: 20px;
+            left: 10px; /* Adjusted for smaller screens */
             transform: translateY(-50%);
             display: flex;
             flex-direction: column-reverse;
             align-items: flex-start;
             gap: 5px;
-            padding: 15px;
+            padding: 10px; /* Smaller padding */
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 15px;
-            max-height: 85vh; /* Taller */
+            max-height: 90vh; /* Taller */
             overflow-y: auto;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
             z-index: 5;
             border: 2px solid #34495e;
+            /* Hide on very small screens, or adjust width */
+            width: 120px;
         }
+        @media (min-width: 768px) {
+            .prize-ladder-container {
+                left: 20px;
+                padding: 15px;
+                width: 180px; /* Wider for desktop */
+            }
+        }
+        @media (max-width: 480px) {
+            .prize-ladder-container {
+                display: none; /* Hide on very small phones to prevent overlap */
+            }
+        }
+
         .prize-ladder-item {
-            font-size: 1rem; /* Slightly larger */
+            font-size: 0.9rem; /* Slightly larger */
             color: #bdc3c7; /* Lighter gray */
-            padding: 8px 15px;
+            padding: 6px 10px;
             border-radius: 8px;
-            width: 140px; /* Wider for alignment */
+            width: 100%; /* Fill container width */
             text-align: right;
             transition: all 0.4s ease-in-out;
+        }
+        @media (min-width: 768px) {
+            .prize-ladder-item {
+                font-size: 1rem;
+                padding: 8px 15px;
+            }
         }
         .prize-ladder-item.current-prize {
             background: linear-gradient(90deg, #f1c40f 0%, #e67e22 100%); /* Gold-orange gradient */
@@ -403,9 +506,15 @@
         /* Timer */
         .timer-container {
             position: relative;
-            width: 100px;
-            height: 100px;
+            width: 80px; /* Smaller timer for mobile */
+            height: 80px;
             margin: 0 auto 1.5rem auto;
+        }
+        @media (min-width: 640px) {
+            .timer-container {
+                width: 100px;
+                height: 100px;
+            }
         }
         .timer-circle {
             width: 100%;
@@ -415,12 +524,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 900;
             color: white;
             border: 5px solid #c0392b;
             box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
             transition: background 0.5s linear; /* Smooth color change */
+        }
+        @media (min-width: 640px) {
+            .timer-circle {
+                font-size: 2.2rem;
+            }
         }
         .timer-circle.warning {
             background: conic-gradient(#f39c12 0%, #f39c12 var(--timer-progress), transparent var(--timer-progress), transparent 100%);
@@ -453,43 +567,66 @@
         }
         .modal-content {
             background: linear-gradient(160deg, #34495e 0%, #2c3e50 100%); /* Consistent gradient */
-            padding: 3rem;
+            padding: 2rem;
             border-radius: 1.5rem;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
             color: #ecf0f1;
-            max-width: 550px; /* Slightly larger */
+            max-width: 450px; /* Slightly larger */
             width: 90%;
             text-align: center;
             transform: translateY(-50px);
             opacity: 0;
             transition: transform 0.3s ease-out, opacity 0.3s ease-out;
         }
+        @media (min-width: 640px) {
+            .modal-content {
+                padding: 3rem;
+                max-width: 550px;
+            }
+        }
         .modal-overlay.show .modal-content {
             transform: translateY(0);
             opacity: 1;
         }
         .modal-content h3 {
-            font-size: 2.2rem; /* Larger heading */
+            font-size: 1.8rem; /* Larger heading */
             font-weight: 900;
-            margin-bottom: 1.8rem;
+            margin-bottom: 1.5rem;
             color: #f1c40f; /* Gold heading */
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
+        @media (min-width: 640px) {
+            .modal-content h3 {
+                font-size: 2.2rem;
+                margin-bottom: 1.8rem;
+            }
+        }
         .modal-content p {
-            font-size: 1.2rem;
-            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
             line-height: 1.6;
+        }
+        @media (min-width: 640px) {
+            .modal-content p {
+                font-size: 1.2rem;
+                margin-bottom: 2.5rem;
+            }
         }
         .modal-content button {
             background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient */
             color: white;
-            padding: 1rem 2rem;
+            padding: 0.8rem 1.5rem;
             border-radius: 1rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease-in-out;
             border: none;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        @media (min-width: 640px) {
+            .modal-content button {
+                padding: 1rem 2rem;
+            }
         }
         .modal-content button:hover {
             background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
@@ -512,12 +649,18 @@
             z-index: 1;
         }
         #leaderboardScreen h2 {
-            font-size: 3.5rem;
+            font-size: 2.5rem;
             font-weight: 900;
             color: #f1c40f;
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-            margin-bottom: 2.5rem;
+            margin-bottom: 2rem;
             letter-spacing: 2px;
+        }
+        @media (min-width: 640px) {
+            #leaderboardScreen h2 {
+                font-size: 3.5rem;
+                margin-bottom: 2.5rem;
+            }
         }
         #leaderboardList {
             list-style: none;
@@ -527,16 +670,23 @@
         }
         #leaderboardList li {
             background-color: rgba(0, 0, 0, 0.3);
-            padding: 1rem 1.5rem;
-            margin-bottom: 10px;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 8px;
             border-radius: 0.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: all 0.2s ease-in-out;
+        }
+        @media (min-width: 640px) {
+            #leaderboardList li {
+                padding: 1rem 1.5rem;
+                margin-bottom: 10px;
+                font-size: 1.2rem;
+            }
         }
         #leaderboardList li:hover {
             background-color: rgba(0, 0, 0, 0.4);
@@ -544,8 +694,14 @@
         }
         #leaderboardList li .rank {
             color: #f1c40f;
-            font-size: 1.4rem;
-            margin-right: 15px;
+            font-size: 1.3rem;
+            margin-right: 10px;
+        }
+        @media (min-width: 640px) {
+            #leaderboardList li .rank {
+                font-size: 1.4rem;
+                margin-right: 15px;
+            }
         }
         #leaderboardList li .name {
             flex-grow: 1;
@@ -553,7 +709,12 @@
         }
         #leaderboardList li .score {
             color: #2ecc71;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
+        }
+        @media (min-width: 640px) {
+            #leaderboardList li .score {
+                font-size: 1.3rem;
+            }
         }
         #leaderboardLoading {
             color: #bdc3c7;
@@ -572,42 +733,42 @@
             <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
         </div>
 
-        <!-- Audio Elements -->
+        <!-- Audio Elements - REPLACE THESE PLACEHOLDER URLs WITH YOUR ACTUAL GAME SOUNDS! -->
         <audio id="backgroundMusic" loop>
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-            Seu navegador não suporta o elemento de áudio.
+            <!-- Sugestão: Música de fundo ambiente do programa -->
         </audio>
         <audio id="silvioVoiceCorrect">
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" type="audio/mpeg">
-            <!-- Replace with actual correct answer audio -->
+            <!-- Sugestão: Áudio da voz do Silvio Santos "Certa Resposta!" -->
         </audio>
         <audio id="silvioVoiceIncorrect">
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" type="audio/mpeg">
-            <!-- Replace with actual incorrect answer audio -->
+            <!-- Sugestão: Áudio da voz do Silvio Santos "Que pena!" ou som de resposta errada -->
         </audio>
         <audio id="silvioVoiceQuestion">
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" type="audio/mpeg">
-            <!-- Replace with actual question intro audio -->
+            <!-- Sugestão: Áudio da voz do Silvio Santos introduzindo a pergunta -->
         </audio>
         <audio id="buttonClickSound">
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" type="audio/mpeg">
-            <!-- Replace with actual button click audio -->
+            <!-- Sugestão: Som de clique de botão -->
         </audio>
         <audio id="lifelineSound">
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" type="audio/mpeg">
-            <!-- Replace with actual lifeline usage audio -->
+            <!-- Sugestão: Som de uso de uma ajuda (50/50, pular, etc.) -->
         </audio>
-        <audio id="timerSound">
+        <audio id="timerSound" loop>
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" type="audio/mpeg">
-            <!-- Replace with actual timer ticking audio -->
+            <!-- Sugestão: Som de relógio/timer tique-taque -->
         </audio>
         <audio id="phoneRingSound">
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" type="audio/mpeg">
-            <!-- Replace with actual phone ring audio -->
+            <!-- Sugestão: Som de telefone tocando -->
         </audio>
         <audio id="gameOverSound">
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" type="audio/mpeg">
-            <!-- Replace with actual game over audio -->
+            <!-- Sugestão: Som de fim de jogo / derrota -->
         </audio>
 
         <div id="startScreen">
@@ -686,6 +847,7 @@
 
     <!-- Firebase SDK -->
     <script type="module">
+        // Importa as funções necessárias do Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -701,14 +863,17 @@
         let auth;
         let userId = 'anonymous'; // Default userId
 
-        // Autenticação e inicialização do Firestore
+        // Função assíncrona para inicializar Firebase e autenticação
         async function initializeFirebaseAndAuth() {
             try {
+                // Inicializa o aplicativo Firebase
                 app = initializeApp(firebaseConfig);
+                // Obtém a instância do Firestore
                 db = getFirestore(app);
+                // Obtém a instância de autenticação
                 auth = getAuth(app);
 
-                // Tenta autenticar com o token fornecido pelo ambiente
+                // Tenta autenticar com o token fornecido pelo ambiente (se existir)
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
@@ -716,72 +881,80 @@
                     await signInAnonymously(auth);
                 }
 
-                // Observa mudanças no estado de autenticação
+                // Observa mudanças no estado de autenticação do usuário
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
+                        // Se o usuário estiver logado, usa seu UID
                         userId = user.uid;
                         console.log("Usuário autenticado:", userId);
                     } else {
+                        // Se o usuário não estiver logado, gera um UUID aleatório como fallback
                         console.log("Usuário deslogado ou anônimo.");
-                        userId = crypto.randomUUID(); // Fallback for unauthenticated
+                        userId = crypto.randomUUID();
                     }
                 });
             } catch (error) {
                 console.error("Erro ao inicializar Firebase ou autenticar:", error);
-                // Fallback para userId se Firebase falhar
+                // Em caso de erro, ainda garante que userId tenha um valor
                 userId = crypto.randomUUID();
             }
         }
 
-        // Adicionar pontuação ao placar de líderes
+        // Função global para adicionar pontuação ao placar de líderes no Firestore
         window.addScoreToLeaderboard = async (playerName, score) => {
             if (!db) {
-                console.error("Firestore não inicializado.");
+                console.error("Firestore não inicializado. Não foi possível adicionar pontuação.");
                 return;
             }
             try {
+                // Define a referência da coleção para o placar de líderes (dados públicos)
                 const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard`);
-                await addDoc(leaderboardCollectionRef, {
+                // Adiciona um novo documento com o nome do jogador, pontuação, timestamp e userId
+                await addDoc(leaderboardRef, {
                     playerName: playerName,
                     score: score,
-                    timestamp: serverTimestamp(),
-                    userId: userId // Store userId for potential future use
+                    timestamp: serverTimestamp(), // Usa o timestamp do servidor para consistência
+                    userId: userId // Armazena o userId para rastreamento
                 });
                 console.log("Pontuação adicionada ao placar de líderes!");
             } catch (e) {
-                console.error("Erro ao adicionar documento: ", e);
+                console.error("Erro ao adicionar documento ao placar de líderes: ", e);
             }
         };
 
-        // Carregar e exibir o placar de líderes
+        // Função global para carregar e exibir o placar de líderes do Firestore
         window.fetchLeaderboard = async () => {
             if (!db) {
-                console.error("Firestore não inicializado.");
+                console.error("Firestore não inicializado. Não foi possível buscar o placar de líderes.");
                 return;
             }
             const leaderboardList = document.getElementById('leaderboardList');
             const leaderboardLoading = document.getElementById('leaderboardLoading');
-            leaderboardList.innerHTML = '';
-            leaderboardLoading.classList.remove('hidden');
+            leaderboardList.innerHTML = ''; // Limpa a lista existente
+            leaderboardLoading.classList.remove('hidden'); // Mostra o indicador de carregamento
 
             try {
+                // Define a referência da coleção
                 const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard`);
-                // Firestore does not support orderBy without indexes, so fetch all and sort in memory
+                // Cria uma query sem orderBy para evitar a necessidade de índices complexos no Firestore
                 const q = query(leaderboardCollectionRef);
+                // Obtém os documentos da query
                 const querySnapshot = await getDocs(q);
                 let scores = [];
+                // Itera sobre os documentos e adiciona os dados à array de scores
                 querySnapshot.forEach((doc) => {
                     scores.push(doc.data());
                 });
 
-                // Sort scores in memory (descending by score)
+                // Ordena as pontuações em memória (do maior para o menor)
                 scores.sort((a, b) => b.score - a.score);
 
-                leaderboardLoading.classList.add('hidden');
+                leaderboardLoading.classList.add('hidden'); // Esconde o indicador de carregamento
                 if (scores.length === 0) {
                     leaderboardList.innerHTML = '<li class="text-center text-gray-400">Nenhuma pontuação ainda. Seja o primeiro!</li>';
                 } else {
-                    scores.slice(0, 10).forEach((data, index) => { // Display top 10
+                    // Exibe apenas as 10 melhores pontuações
+                    scores.slice(0, 10).forEach((data, index) => {
                         const listItem = document.createElement('li');
                         listItem.innerHTML = `
                             <span class="rank">${index + 1}º</span>
@@ -793,12 +966,12 @@
                 }
             } catch (e) {
                 console.error("Erro ao buscar placar de líderes: ", e);
-                leaderboardLoading.classList.add('hidden');
+                leaderboardLoading.classList.add('hidden'); // Esconde o indicador mesmo em caso de erro
                 leaderboardList.innerHTML = '<li class="text-center text-red-400">Erro ao carregar placar.</li>';
             }
         };
 
-        // Chamar a inicialização do Firebase quando o DOM estiver pronto
+        // Chama a função de inicialização do Firebase quando o DOM estiver completamente carregado
         document.addEventListener('DOMContentLoaded', initializeFirebaseAndAuth);
     </script>
 
@@ -947,52 +1120,53 @@
         // Elementos do DOM
         const startScreen = document.getElementById('startScreen');
         const gameScreen = document.getElementById('gameScreen');
-        const endScreen = document.getElementById('endScreen'); // New end screen
-        const leaderboardScreen = document.getElementById('leaderboardScreen'); // New leaderboard screen
+        const endScreen = document.getElementById('endScreen');
+        const leaderboardScreen = document.getElementById('leaderboardScreen');
         const startButton = document.getElementById('startButton');
-        const playAgainEndButton = document.getElementById('playAgainEndButton'); // New play again button on end screen
-        const viewLeaderboardButton = document.getElementById('viewLeaderboardButton'); // New button to view leaderboard
-        const backToStartButton = document.getElementById('backToStartButton'); // Button to go back from leaderboard
+        const playAgainEndButton = document.getElementById('playAgainEndButton');
+        const viewLeaderboardButton = document.getElementById('viewLeaderboardButton');
+        const backToStartButton = document.getElementById('backToStartButton');
         const questionText = document.getElementById('questionText');
         const optionsContainer = document.getElementById('optionsContainer');
         const feedbackMessage = document.getElementById('feedbackMessage');
         const prizeDisplay = document.getElementById('prizeDisplay');
-        const finalPrizeDisplay = document.getElementById('finalPrizeDisplay'); // Final prize on end screen
+        const finalPrizeDisplay = document.getElementById('finalPrizeDisplay');
         const confirmButton = document.getElementById('confirmButton');
-        const stopButton = document.getElementById('stopButton'); // New stop button
+        const stopButton = document.getElementById('stopButton');
         const nextButton = document.getElementById('nextButton');
-        const playAgainButton = document.getElementById('playAgainButton'); // Play again button on game screen (for after correct answer)
+        const playAgainButton = document.getElementById('playAgainButton');
         const backgroundMusic = document.getElementById('backgroundMusic');
         const silvioVoiceCorrect = document.getElementById('silvioVoiceCorrect');
         const silvioVoiceIncorrect = document.getElementById('silvioVoiceIncorrect');
         const silvioVoiceQuestion = document.getElementById('silvioVoiceQuestion');
-        const buttonClickSound = document.getElementById('buttonClickSound'); // New button click sound
-        const lifelineSound = document.getElementById('lifelineSound'); // New lifeline sound
-        const timerSound = document.getElementById('timerSound'); // Timer ticking sound
-        const phoneRingSound = document.getElementById('phoneRingSound'); // Phone ring sound
-        const gameOverSound = document.getElementById('gameOverSound'); // Game over sound
+        const buttonClickSound = document.getElementById('buttonClickSound');
+        const lifelineSound = document.getElementById('lifelineSound');
+        const timerSound = document.getElementById('timerSound');
+        const phoneRingSound = document.getElementById('phoneRingSound');
+        const gameOverSound = document.getElementById('gameOverSound');
         const fiftyFiftyButton = document.getElementById('fiftyFiftyButton');
         const skipButton = document.getElementById('skipButton');
         const universitariosButton = document.getElementById('universitariosButton');
-        const phoneAFriendButton = document.getElementById('phoneAFriendButton'); // New phone a friend button
+        const phoneAFriendButton = document.getElementById('phoneAFriendButton');
         const universitariosResults = document.getElementById('universitariosResults');
         const volumeSlider = document.getElementById('volumeSlider');
         const confettiContainer = document.getElementById('confettiContainer');
-        const prizeLadderContainer = document.getElementById('prizeLadderContainer'); // Prize ladder visualization
-        const timerCircle = document.getElementById('timerCircle'); // Timer circle element
+        const prizeLadderContainer = document.getElementById('prizeLadderContainer');
+        const timerCircle = document.getElementById('timerCircle');
         const phoneAFriendModal = document.getElementById('phoneAFriendModal');
         const phoneAFriendMessage = document.getElementById('phoneAFriendMessage');
         const closePhoneAFriendModal = document.getElementById('closePhoneAFriendModal');
-        const characterOptions = document.querySelectorAll('.character-option'); // Character selection options
+        const characterOptions = document.querySelectorAll('.character-option');
 
 
-        // Função para tocar áudio
+        // Função para tocar áudio, reiniciando se já estiver tocando para evitar sobreposição
         function playAudio(audioElement) {
-            audioElement.currentTime = 0; // Reinicia o áudio se já estiver tocando
+            audioElement.pause(); // Pausa para garantir que comece do zero
+            audioElement.currentTime = 0; // Reinicia o áudio
             audioElement.play().catch(e => console.error("Erro ao tocar áudio:", e));
         }
 
-        // Event Listeners
+        // Event Listeners para os botões do jogo
         startButton.addEventListener('click', () => {
             playAudio(buttonClickSound);
             startGame();
@@ -1000,13 +1174,13 @@
 
         confirmButton.addEventListener('click', () => {
             playAudio(buttonClickSound);
-            clearTimer();
+            clearTimer(); // Para o timer ao confirmar
             checkAnswer();
         });
 
         stopButton.addEventListener('click', () => {
             playAudio(buttonClickSound);
-            clearTimer();
+            clearTimer(); // Para o timer ao parar o jogo
             stopGame();
         });
 
@@ -1015,9 +1189,9 @@
             currentQuestionIndex++;
             currentPrizeIndex++;
             if (currentQuestionIndex < questions.length) {
-                loadQuestion();
+                loadQuestion(); // Carrega a próxima pergunta
             } else {
-                endGame(true, prizeLadder[prizeLadder.length - 1]); // Ganhou o milhão!
+                endGame(true, prizeLadder[prizeLadder.length - 1]); // Se todas as perguntas foram respondidas, o jogador ganha o milhão
             }
         });
 
@@ -1043,40 +1217,50 @@
             showStartScreen();
         });
 
+        // Event Listeners para as ajudas (lifelines)
         fiftyFiftyButton.addEventListener('click', () => {
             if (!fiftyFiftyUsed && gameStarted && selectedOption === null) {
                 playAudio(lifelineSound);
+                fiftyFiftyButton.classList.add('used-animation'); // Adiciona animação
                 useFiftyFifty();
+                setTimeout(() => fiftyFiftyButton.classList.remove('used-animation'), 500); // Remove animação
             }
         });
 
         skipButton.addEventListener('click', () => {
             if (!skipUsed && gameStarted && selectedOption === null) {
                 playAudio(lifelineSound);
-                clearTimer(); // Clear timer when skipping
+                skipButton.classList.add('used-animation');
+                clearTimer(); // Limpa o timer ao pular a pergunta
                 useSkip();
+                setTimeout(() => skipButton.classList.remove('used-animation'), 500);
             }
         });
 
         universitariosButton.addEventListener('click', () => {
             if (!universitariosUsed && gameStarted && selectedOption === null) {
                 playAudio(lifelineSound);
+                universitariosButton.classList.add('used-animation');
                 useUniversitarios();
+                setTimeout(() => universitariosButton.classList.remove('used-animation'), 500);
             }
         });
 
         phoneAFriendButton.addEventListener('click', () => {
             if (!phoneAFriendUsed && gameStarted && selectedOption === null) {
                 playAudio(phoneRingSound);
+                phoneAFriendButton.classList.add('used-animation');
                 usePhoneAFriend();
+                setTimeout(() => phoneAFriendButton.classList.remove('used-animation'), 500);
             }
         });
 
         closePhoneAFriendModal.addEventListener('click', () => {
-            phoneAFriendModal.classList.add('hidden');
-            phoneAFriendModal.classList.remove('show'); // Hide modal with transition
+            phoneAFriendModal.classList.remove('show'); // Esconde o modal com transição
+            setTimeout(() => phoneAFriendModal.classList.add('hidden'), 300); // Esconde após a transição
         });
 
+        // Controle de volume para todos os elementos de áudio
         volumeSlider.addEventListener('input', (event) => {
             const volume = event.target.value;
             backgroundMusic.volume = volume;
@@ -1090,6 +1274,7 @@
             gameOverSound.volume = volume;
         });
 
+        // Seleção de personagem
         characterOptions.forEach(option => {
             option.addEventListener('click', () => {
                 document.querySelector('.character-option.selected-char').classList.remove('selected-char');
@@ -1098,7 +1283,9 @@
             });
         });
 
-        // Game Flow Functions
+        // Funções de Fluxo do Jogo
+
+        // Mostra uma tela específica e esconde as outras
         function showScreen(screenToShow) {
             const screens = [startScreen, gameScreen, endScreen, leaderboardScreen];
             screens.forEach(screen => {
@@ -1110,44 +1297,49 @@
             });
         }
 
+        // Exibe a tela inicial e reinicia o jogo
         function showStartScreen() {
             resetGame();
             showScreen(startScreen);
         }
 
+        // Inicia o jogo
         function startGame() {
             showScreen(gameScreen);
-            prizeLadderContainer.classList.remove('hidden'); // Show prize ladder
+            prizeLadderContainer.classList.remove('hidden'); // Mostra a escada de prêmios
             backgroundMusic.play().catch(e => console.error("Erro ao tocar música de fundo:", e));
             gameStarted = true;
             loadQuestion();
-            updateLifelineButtons();
-            confettiContainer.classList.add('hidden'); // Hide confetti on new game
-            renderPrizeLadder(); // Initial render of prize ladder
+            updateLifelineButtons(); // Atualiza o estado dos botões de ajuda
+            confettiContainer.classList.add('hidden'); // Esconde confetes de jogos anteriores
+            renderPrizeLadder(); // Renderiza a escada de prêmios inicial
         }
 
+        // Carrega a pergunta atual e suas opções
         function loadQuestion() {
-            selectedOption = null;
-            feedbackMessage.textContent = '';
-            confirmButton.classList.add('hidden');
-            stopButton.classList.remove('hidden'); // Show stop button
-            nextButton.classList.add('hidden'); // Ensure next button is hidden on new question
-            playAgainButton.classList.add('hidden');
-            universitariosResults.classList.add('hidden'); // Hide universitarios results
-            phoneAFriendModal.classList.add('hidden'); // Hide phone a friend modal
+            selectedOption = null; // Reseta a opção selecionada
+            feedbackMessage.textContent = ''; // Limpa mensagens de feedback
+            confirmButton.classList.add('hidden'); // Esconde o botão de confirmar
+            stopButton.classList.remove('hidden'); // Mostra o botão de parar
+            nextButton.classList.add('hidden'); // Garante que o botão de próxima pergunta esteja escondido
+            playAgainButton.classList.add('hidden'); // Garante que o botão de jogar novamente esteja escondido
+            universitariosResults.classList.add('hidden'); // Esconde resultados dos universitários
+            phoneAFriendModal.classList.add('hidden'); // Esconde o modal do telefone
 
-            animatePrizeDisplay(prizeLadder[currentPrizeIndex]);
-            updatePrizeLadderHighlight();
+            animatePrizeDisplay(prizeLadder[currentPrizeIndex]); // Anima o prêmio atual
+            updatePrizeLadderHighlight(); // Atualiza o destaque na escada de prêmios
 
             const questionData = questions[currentQuestionIndex];
             questionText.textContent = questionData.question;
-            optionsContainer.innerHTML = '';
+            optionsContainer.innerHTML = ''; // Limpa as opções anteriores
 
+            // Anima a entrada da caixa de pergunta
             questionText.classList.remove('show');
             setTimeout(() => {
                 questionText.classList.add('show');
             }, 50);
 
+            // Cria e anima os botões de opção
             questionData.options.forEach((option, index) => {
                 const button = document.createElement('button');
                 button.textContent = option;
@@ -1157,57 +1349,64 @@
 
                 setTimeout(() => {
                     button.classList.add('show');
-                }, 100 + index * 100);
+                }, 100 + index * 100); // Atraso para animação em cascata
             });
 
+            // Reseta o estado visual de todos os botões de opção
             document.querySelectorAll('.option-button').forEach(btn => {
                 btn.disabled = false;
                 btn.classList.remove('selected', 'correct', 'incorrect', 'disabled', 'hidden');
             });
 
-            playAudio(silvioVoiceQuestion);
-            startTimer();
+            playAudio(silvioVoiceQuestion); // Toca o áudio de introdução da pergunta
+            startTimer(); // Inicia o timer
         }
 
+        // Anima a exibição do prêmio atual
         function animatePrizeDisplay(targetPrize) {
             let current = parseInt(prizeDisplay.textContent.replace(/\D/g, '')) || 0;
-            const step = Math.ceil(Math.abs(targetPrize - current) / 50);
+            const step = Math.ceil(Math.abs(targetPrize - current) / 50); // Calcula o passo da animação
             const increment = targetPrize > current ? step : -step;
 
             const update = () => {
                 current += increment;
+                // Garante que o valor não ultrapasse o alvo e para a animação
                 if ((increment > 0 && current >= targetPrize) || (increment < 0 && current <= targetPrize)) {
                     current = targetPrize;
                     prizeDisplay.textContent = current.toLocaleString('pt-BR');
                     return;
                 }
                 prizeDisplay.textContent = current.toLocaleString('pt-BR');
-                requestAnimationFrame(update);
+                requestAnimationFrame(update); // Continua a animação
             };
             requestAnimationFrame(update);
         }
 
+        // Renderiza a escada de prêmios visual
         function renderPrizeLadder() {
             prizeLadderContainer.innerHTML = '';
+            // Itera de trás para frente para exibir do maior para o menor prêmio
             for (let i = prizeLadder.length - 1; i >= 0; i--) {
                 const prize = prizeLadder[i];
                 const item = document.createElement('div');
                 item.classList.add('prize-ladder-item');
                 item.textContent = `R$ ${prize.toLocaleString('pt-BR')}`;
                 if (safePrizeLevels.includes(i)) {
-                    item.classList.add('safe-level');
+                    item.classList.add('safe-level'); // Adiciona classe para níveis de segurança
                 }
-                item.dataset.index = i;
+                item.dataset.index = i; // Armazena o índice para destaque
                 prizeLadderContainer.appendChild(item);
             }
-            updatePrizeLadderHighlight();
+            updatePrizeLadderHighlight(); // Atualiza o destaque inicial
         }
 
+        // Atualiza o destaque na escada de prêmios para o prêmio atual
         function updatePrizeLadderHighlight() {
             document.querySelectorAll('.prize-ladder-item').forEach(item => {
                 item.classList.remove('current-prize');
                 if (parseInt(item.dataset.index) === currentPrizeIndex) {
                     item.classList.add('current-prize');
+                    // Rola para o item atual na escada de prêmios
                     setTimeout(() => {
                         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }, 100);
@@ -1215,31 +1414,40 @@
             });
         }
 
+        // Inicia o timer da pergunta
         function startTimer() {
-            clearTimer();
-            timeLeft = 30;
-            updateTimerDisplay();
-            timerSound.pause();
+            clearTimer(); // Limpa qualquer timer anterior
+            timeLeft = 30; // Reseta o tempo
+            updateTimerDisplay(); // Atualiza a exibição do timer
+            timerSound.pause(); // Garante que o som do timer esteja parado no início
 
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateTimerDisplay();
 
-                if (timeLeft <= 10 && timeLeft > 0) {
+                // Toca o som do timer nos últimos 10 segundos
+                if (timeLeft === 10) {
                     playAudio(timerSound);
-                } else if (timeLeft <= 0) {
+                } else if (timeLeft < 10 && timerSound.paused) {
+                    // Garante que o som continue tocando se o usuário pausar e despausar
+                    playAudio(timerSound);
+                }
+                
+                if (timeLeft <= 0) {
                     clearTimer();
-                    timerSound.pause();
+                    timerSound.pause(); // Para o som do timer
                     feedbackMessage.textContent = 'Tempo esgotado! Que pena!';
                     feedbackMessage.style.color = '#e74c3c';
                     const questionData = questions[currentQuestionIndex];
                     const allOptionButtons = document.querySelectorAll('.option-button');
-                    allOptionButtons.forEach(btn => btn.disabled = true);
+                    allOptionButtons.forEach(btn => btn.disabled = true); // Desabilita todas as opções
+                    // Destaca a resposta correta
                     allOptionButtons.forEach(btn => {
                         if (btn.textContent === questionData.correctAnswer) {
                             btn.classList.add('correct');
                         }
                     });
+                    // Calcula o prêmio final com base no último nível de segurança alcançado
                     let finalPrize = 0;
                     for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
                         if (currentPrizeIndex >= safePrizeLevels[i]) {
@@ -1247,16 +1455,18 @@
                             break;
                         }
                     }
-                    endGame(false, finalPrize);
+                    endGame(false, finalPrize); // Termina o jogo
                 }
-            }, 1000);
+            }, 1000); // A cada 1 segundo
         }
 
+        // Atualiza a exibição visual do timer
         function updateTimerDisplay() {
             const percentage = (timeLeft / 30) * 100;
             timerCircle.style.setProperty('--timer-progress', `${percentage}%`);
             timerCircle.textContent = timeLeft;
 
+            // Altera a cor do timer com base no tempo restante
             timerCircle.classList.remove('warning', 'danger');
             if (timeLeft <= 10 && timeLeft > 5) {
                 timerCircle.classList.add('warning');
@@ -1265,52 +1475,57 @@
             }
         }
 
+        // Limpa o intervalo do timer
         function clearTimer() {
             clearInterval(timerInterval);
-            timerSound.pause();
-            timerSound.currentTime = 0;
+            timerSound.pause(); // Pausa o som do timer
+            timerSound.currentTime = 0; // Reseta o áudio do timer
         }
 
+        // Seleciona uma opção de resposta
         function selectOption(button, option) {
             document.querySelectorAll('.option-button').forEach(btn => {
-                btn.classList.remove('selected');
+                btn.classList.remove('selected'); // Remove seleção de outras opções
             });
-            button.classList.add('selected');
+            button.classList.add('selected'); // Adiciona classe de selecionado
             selectedOption = option;
-            confirmButton.classList.remove('hidden');
-            stopButton.classList.remove('hidden');
+            confirmButton.classList.remove('hidden'); // Mostra o botão de confirmar
+            stopButton.classList.remove('hidden'); // Garante que o botão de parar esteja visível
         }
 
+        // Verifica se a resposta selecionada está correta
         function checkAnswer() {
             if (!selectedOption) {
                 feedbackMessage.textContent = 'Por favor, selecione uma opção!';
                 return;
             }
 
-            clearTimer();
+            clearTimer(); // Para o timer
 
             const questionData = questions[currentQuestionIndex];
             const allOptionButtons = document.querySelectorAll('.option-button');
 
-            allOptionButtons.forEach(btn => btn.disabled = true);
+            allOptionButtons.forEach(btn => btn.disabled = true); // Desabilita todas as opções após a escolha
 
-            confirmButton.classList.add('hidden');
-            stopButton.classList.add('hidden');
+            confirmButton.classList.add('hidden'); // Esconde o botão de confirmar
+            stopButton.classList.add('hidden'); // Esconde o botão de parar
 
             if (selectedOption === questionData.correctAnswer) {
                 feedbackMessage.textContent = 'Certa Resposta! Muito bem! Clique em "Próxima Pergunta" para continuar.';
-                feedbackMessage.style.color = '#2ecc71';
-                playAudio(silvioVoiceCorrect);
+                feedbackMessage.style.color = '#2ecc71'; // Cor verde para resposta correta
+                playAudio(silvioVoiceCorrect); // Toca áudio de resposta correta
+                // Destaca a opção correta
                 allOptionButtons.forEach(btn => {
                     if (btn.textContent === questionData.correctAnswer) {
                         btn.classList.add('correct');
                     }
                 });
-                nextButton.classList.remove('hidden'); // This is where the button is shown
+                nextButton.classList.remove('hidden'); // Mostra o botão para a próxima pergunta
             } else {
                 feedbackMessage.textContent = `Que pena! A resposta correta era: ${questionData.correctAnswer}`;
-                feedbackMessage.style.color = '#e74c3c';
-                playAudio(silvioVoiceIncorrect);
+                feedbackMessage.style.color = '#e74c3c'; // Cor vermelha para resposta incorreta
+                playAudio(silvioVoiceIncorrect); // Toca áudio de resposta incorreta
+                // Destaca a opção selecionada como incorreta e a correta
                 allOptionButtons.forEach(btn => {
                     if (btn.textContent === selectedOption) {
                         btn.classList.add('incorrect');
@@ -1319,6 +1534,7 @@
                         btn.classList.add('correct');
                     }
                 });
+                // Calcula o prêmio final com base no último nível de segurança alcançado
                 let finalPrize = 0;
                 for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
                     if (currentPrizeIndex >= safePrizeLevels[i]) {
@@ -1326,13 +1542,15 @@
                         break;
                     }
                 }
-                endGame(false, finalPrize);
+                endGame(false, finalPrize); // Termina o jogo
             }
         }
 
+        // Função para parar o jogo voluntariamente
         function stopGame() {
-            clearTimer();
+            clearTimer(); // Para o timer
             let finalPrize = 0;
+            // Calcula o prêmio final com base no último nível de segurança alcançado
             for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
                 if (currentPrizeIndex >= safePrizeLevels[i]) {
                     finalPrize = prizeLadder[safePrizeLevels[i]];
@@ -1340,50 +1558,51 @@
                 }
             }
             feedbackMessage.textContent = `Você parou o jogo e levou: R$ ${finalPrize.toLocaleString('pt-BR')}!`;
-            feedbackMessage.style.color = '#f1c40f';
+            feedbackMessage.style.color = '#f1c40f'; // Cor dourada para o prêmio
             
             setTimeout(() => {
-                endGame(false, finalPrize); // Go to end screen with the stopped prize
+                endGame(false, finalPrize); // Vai para a tela final com o prêmio ganho
             }, 2000);
         }
 
+        // Função para finalizar o jogo (vitória ou derrota)
         function endGame(wonMillion, finalPrize = 0) {
-            clearTimer();
-            gameScreen.classList.add('hidden');
-            prizeLadderContainer.classList.add('hidden');
-            endScreen.classList.remove('hidden');
-            finalPrizeDisplay.textContent = `R$ ${finalPrize.toLocaleString('pt-BR')}`;
+            clearTimer(); // Para o timer
+            gameScreen.classList.add('hidden'); // Esconde a tela do jogo
+            prizeLadderContainer.classList.add('hidden'); // Esconde a escada de prêmios
+            endScreen.classList.remove('hidden'); // Mostra a tela final
+            finalPrizeDisplay.textContent = `R$ ${finalPrize.toLocaleString('pt-BR')}`; // Exibe o prêmio final
 
-            // Submit score to leaderboard
-            // Prompt for player name (simple for now, could be a modal)
+            // Solicita o nome do jogador para o placar de líderes
             let playerName = prompt("Parabéns! Digite seu nome para o placar de líderes:", "Jogador");
             if (!playerName || playerName.trim() === "") {
                 playerName = "Anônimo";
             }
-            window.addScoreToLeaderboard(playerName, finalPrize);
-
+            window.addScoreToLeaderboard(playerName, finalPrize); // Adiciona a pontuação ao placar
 
             if (wonMillion) {
                 endScreen.querySelector('.title').textContent = 'PARABÉNS! VOCÊ GANHOU 1 MILHÃO DE REAIS!';
                 endScreen.querySelector('.title').classList.remove('text-green-400');
                 endScreen.querySelector('.title').classList.add('text-yellow-400');
-                triggerConfetti();
+                triggerConfetti(); // Ativa a animação de confetes
             } else {
                 endScreen.querySelector('.title').textContent = 'Fim de Jogo!';
                 endScreen.querySelector('.title').classList.remove('text-yellow-400');
                 endScreen.querySelector('.title').classList.add('text-green-400');
-                playAudio(gameOverSound);
+                playAudio(gameOverSound); // Toca o som de game over
             }
 
-            backgroundMusic.pause();
-            backgroundMusic.currentTime = 0;
+            backgroundMusic.pause(); // Pausa a música de fundo
+            backgroundMusic.currentTime = 0; // Reinicia a música de fundo
         }
 
+        // Mostra a tela do placar de líderes
         function showLeaderboard() {
             showScreen(leaderboardScreen);
-            window.fetchLeaderboard(); // Call global function to fetch leaderboard
+            window.fetchLeaderboard(); // Chama a função global para buscar o placar
         }
 
+        // Reseta todas as variáveis e o estado do jogo para um novo início
         function resetGame() {
             clearTimer();
             currentQuestionIndex = 0;
@@ -1395,31 +1614,35 @@
             universitariosUsed = false;
             phoneAFriendUsed = false;
             feedbackMessage.textContent = '';
+            // Esconde todas as telas e mostra a inicial
             startScreen.classList.remove('hidden');
             gameScreen.classList.add('hidden');
             endScreen.classList.add('hidden');
-            leaderboardScreen.classList.add('hidden'); // Hide leaderboard
-            updateLifelineButtons();
-            confettiContainer.classList.add('hidden');
-            prizeDisplay.textContent = '0';
-            timerCircle.style.setProperty('--timer-progress', '100%');
+            leaderboardScreen.classList.add('hidden');
+            updateLifelineButtons(); // Reseta o estado dos botões de ajuda
+            confettiContainer.classList.add('hidden'); // Esconde os confetes
+            prizeDisplay.textContent = '0'; // Reseta o prêmio exibido
+            timerCircle.style.setProperty('--timer-progress', '100%'); // Reseta o timer visual
             timerCircle.textContent = '';
             timerCircle.classList.remove('warning', 'danger');
-            prizeLadderContainer.classList.add('hidden');
+            prizeLadderContainer.classList.add('hidden'); // Esconde a escada de prêmios
         }
 
+        // Atualiza o estado (habilitado/desabilitado) dos botões de ajuda
         function updateLifelineButtons() {
             fiftyFiftyButton.disabled = fiftyFiftyUsed;
             skipButton.disabled = skipUsed;
             universitariosButton.disabled = universitariosUsed;
             phoneAFriendButton.disabled = phoneAFriendUsed;
 
+            // Adiciona/remove classes para estilo visual de desabilitado
             if (fiftyFiftyUsed) fiftyFiftyButton.classList.add('disabled'); else fiftyFiftyButton.classList.remove('disabled');
             if (skipUsed) skipButton.classList.add('disabled'); else skipButton.classList.remove('disabled');
             if (universitariosUsed) universitariosButton.classList.add('disabled'); else universitariosButton.classList.remove('disabled');
             if (phoneAFriendUsed) phoneAFriendButton.classList.add('disabled'); else phoneAFriendButton.classList.remove('disabled');
         }
 
+        // Lógica da ajuda 50/50
         function useFiftyFifty() {
             if (fiftyFiftyUsed || !gameStarted || selectedOption !== null) return;
 
@@ -1427,15 +1650,18 @@
             updateLifelineButtons();
 
             const questionData = questions[currentQuestionIndex];
+            // Filtra as opções incorretas que não estão escondidas
             const allOptions = Array.from(document.querySelectorAll('.option-button:not(.hidden)'));
             const incorrectOptions = allOptions.filter(btn => btn.textContent !== questionData.correctAnswer);
 
             let optionsToHide = [];
+            // Seleciona duas opções incorretas para esconder
             while (optionsToHide.length < 2 && incorrectOptions.length > 0) {
                 const randomIndex = Math.floor(Math.random() * incorrectOptions.length);
                 optionsToHide.push(incorrectOptions.splice(randomIndex, 1)[0]);
             }
 
+            // Esconde e desabilita as opções selecionadas
             optionsToHide.forEach(btn => {
                 btn.classList.add('hidden');
                 btn.disabled = true;
@@ -1445,6 +1671,7 @@
             feedbackMessage.style.color = '#bdc3c7';
         }
 
+        // Lógica da ajuda Pular Pergunta
         function useSkip() {
             if (skipUsed || !gameStarted || selectedOption !== null) return;
 
@@ -1457,38 +1684,46 @@
             currentQuestionIndex++;
             currentPrizeIndex++;
             if (currentQuestionIndex < questions.length) {
-                loadQuestion();
+                loadQuestion(); // Carrega a próxima pergunta
             } else {
-                endGame(true, prizeLadder[prizeLadder.length - 1]);
+                endGame(true, prizeLadder[prizeLadder.length - 1]); // Se pular a última, ganha o milhão
             }
         }
 
+        // Lógica da ajuda Universitários
         function useUniversitarios() {
             if (universitariosUsed || !gameStarted || selectedOption !== null) return;
 
             universitariosUsed = true;
             updateLifelineButtons();
-            universitariosResults.innerHTML = '';
-            universitariosResults.classList.remove('hidden');
+            universitariosResults.innerHTML = ''; // Limpa resultados anteriores
+            universitariosResults.classList.remove('hidden'); // Mostra a área de resultados
 
             const questionData = questions[currentQuestionIndex];
             const options = questionData.options;
             const correctAnswer = questionData.correctAnswer;
 
             let votes = {};
-            let totalVotes = 100;
+            let totalVotes = 100; // Total de porcentagem
 
-            let correctPercentage = Math.floor(Math.random() * (70 - 40 + 1)) + 40;
+            // Define uma porcentagem alta para a resposta correta
+            let correctPercentage = Math.floor(Math.random() * (75 - 50 + 1)) + 50; // Entre 50% e 75%
             votes[correctAnswer] = correctPercentage;
             totalVotes -= correctPercentage;
 
             let remainingOptions = options.filter(opt => opt !== correctAnswer);
-            let remainingVotesPerOption = Math.floor(totalVotes / remainingOptions.length);
+            let remainingVotesPerOption = 0;
+            if (remainingOptions.length > 0) {
+                remainingVotesPerOption = Math.floor(totalVotes / remainingOptions.length);
+            }
+            
 
+            // Distribui os votos restantes entre as opções incorretas
             remainingOptions.forEach(opt => {
                 votes[opt] = remainingVotesPerOption;
             });
 
+            // Adiciona o resto dos votos aleatoriamente
             let remainder = totalVotes % remainingOptions.length;
             if (remainder > 0 && remainingOptions.length > 0) {
                 for (let i = 0; i < remainder; i++) {
@@ -1497,6 +1732,22 @@
                 }
             }
 
+            // Garante que a soma seja 100% (ajuste final se necessário devido a arredondamentos)
+            let currentSum = Object.values(votes).reduce((sum, val) => sum + val, 0);
+            if (currentSum !== 100) {
+                const diff = 100 - currentSum;
+                if (diff > 0 && remainingOptions.length > 0) {
+                    // Adiciona a diferença à opção correta ou a uma aleatória
+                    votes[correctAnswer] += diff;
+                } else if (diff < 0 && remainingOptions.length > 0) {
+                    // Remove a diferença de uma opção aleatória (não a correta)
+                    const randomIndex = Math.floor(Math.random() * remainingOptions.length);
+                    votes[remainingOptions[randomIndex]] += diff;
+                }
+            }
+
+
+            // Exibe as barras de porcentagem
             options.forEach(option => {
                 const percentage = votes[option] || 0;
                 const barContainer = document.createElement('div');
@@ -1510,6 +1761,7 @@
                 `;
                 universitariosResults.appendChild(barContainer);
 
+                // Anima o preenchimento das barras
                 setTimeout(() => {
                     barContainer.querySelector('.universitarios-bar').style.width = `${percentage}%`;
                 }, 100);
@@ -1519,6 +1771,7 @@
             feedbackMessage.style.color = '#bdc3c7';
         }
 
+        // Lógica da ajuda Telefone para um Amigo
         function usePhoneAFriend() {
             if (phoneAFriendUsed || !gameStarted || selectedOption !== null) return;
 
@@ -1529,27 +1782,29 @@
             const correctAnswer = questionData.correctAnswer;
             const options = questionData.options;
 
-            let friendMessage = "Hmm, essa é difícil... ";
+            let friendMessage = "";
             const randomChance = Math.random();
 
-            if (randomChance < 0.6) {
-                friendMessage += `Tenho quase certeza que a resposta é a "${correctAnswer}".`;
-            } else if (randomChance < 0.9) {
+            // Diferentes níveis de certeza do amigo
+            if (randomChance < 0.7) { // 70% de chance de dar a resposta correta com confiança
+                friendMessage = `Tenho quase certeza que a resposta é a "${correctAnswer}".`;
+            } else if (randomChance < 0.9) { // 20% de chance de dar uma dica ambígua
                 const incorrectOptions = options.filter(opt => opt !== correctAnswer);
                 const hintOption = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
-                friendMessage += `Acho que pode ser a "${hintOption}", mas não tenho certeza.`;
-            } else {
-                friendMessage += "Não consigo te ajudar nessa, desculpe!";
+                friendMessage = `Hmm, estou em dúvida entre a "${correctAnswer}" e a "${hintOption}". Mas se eu tivesse que chutar, iria na "${correctAnswer}".`;
+            } else { // 10% de chance de não saber
+                friendMessage = "Essa é bem difícil... Não consigo te ajudar nessa, desculpe!";
             }
 
             phoneAFriendMessage.textContent = friendMessage;
             phoneAFriendModal.classList.remove('hidden');
-            phoneAFriendModal.classList.add('show');
+            phoneAFriendModal.classList.add('show'); // Mostra o modal com transição
 
             feedbackMessage.textContent = 'Seu amigo te deu uma dica!';
             feedbackMessage.style.color = '#bdc3c7';
         }
 
+        // Ativa a animação de confetes
         function triggerConfetti() {
             confettiContainer.classList.remove('hidden');
             for (let i = 0; i < 300; i++) {
@@ -1561,13 +1816,14 @@
                 confetti.style.backgroundColor = ['#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#c0392b', '#27ae60'][Math.floor(Math.random() * 8)];
                 confettiContainer.appendChild(confetti);
             }
+            // Limpa os confetes após um tempo
             setTimeout(() => {
                 confettiContainer.innerHTML = '';
                 confettiContainer.classList.add('hidden');
             }, 6000);
         }
 
-        // Garante que a música comece a tocar apenas após a interação do usuário
+        // Garante que a música comece a tocar apenas após a interação do usuário e define o volume inicial
         document.addEventListener('DOMContentLoaded', () => {
             backgroundMusic.volume = volumeSlider.value;
             silvioVoiceCorrect.volume = volumeSlider.value;
