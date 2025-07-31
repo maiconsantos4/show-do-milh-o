@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show do Milhão da Embriologia</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* Darker, richer background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevent scroll for confetti */
+        }
+        .game-container {
+            background: linear-gradient(160deg, #2c3e50 0%, #1a2533 100%); /* Dark blue-gray gradient */
+            border-radius: 2rem; /* More rounded */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7); /* Deeper shadow */
+            padding: 3.5rem;
+            max-width: 950px; /* Wider to accommodate elements */
+            width: 100%;
+            text-align: center;
+            color: #ecf0f1; /* Lighter text */
+            border: 4px solid #34495e; /* Thicker, darker border */
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 70%); /* Stronger light pulse */
+            animation: pulse-light 12s infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes pulse-light {
+            0% { transform: scale(1); opacity: 0.08; }
+            100% { transform: scale(1.3); opacity: 0.2; }
+        }
+
+        .title {
+            font-size: 4rem; /* Even larger title */
+            font-weight: 900;
+            color: #f1c40f; /* Brighter gold */
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            margin-bottom: 2.5rem;
+            letter-spacing: 2px;
+        }
+
+        /* Start Screen Specific Styles */
+        #startScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px; /* Ensure enough space for character */
+        }
+        .character-selection {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+        .character-option {
+            width: 120px;
+            height: 120px;
+            background-color: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            border: 5px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4), 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .character-option:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6), 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+        .character-option.selected-char {
+            border-color: #f1c40f; /* Gold border for selected character */
+            transform: scale(1.1);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 10px 25px rgba(0, 0, 0, 0.6);
+        }
+
+        #startButton {
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient */
+            color: white;
+            padding: 1.5rem 4rem; /* Larger button */
+            border-radius: 1.5rem; /* More rounded */
+            font-size: 1.8rem; /* Larger font */
+            font-weight: bold;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease-in-out;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #startButton:hover {
+            background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Game Screen Specific Styles */
+        .question-box {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); /* Darker blue-gray gradient */
+            padding: 2.5rem;
+            border-radius: 1.5rem; /* More rounded */
+            margin-bottom: 2.5rem;
+            font-size: 1.8rem; /* Larger font */
+            font-weight: bold;
+            color: #ecf0f1;
+            min-height: 160px; /* Taller */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 3px solid #5fa2dd; /* Brighter blue border */
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3), 0 5px 15px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .question-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem; /* Larger gap */
+            margin-bottom: 3rem;
+        }
+        @media (min-width: 640px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .option-button {
+            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%); /* Blue gradient */
+            color: white;
+            padding: 1.5rem 2rem; /* Larger padding */
+            border-radius: 1rem; /* More rounded */
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            border: none;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .option-button.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .option-button:hover:not(.selected):not(.correct):not(.incorrect) {
+            background: linear-gradient(180deg, #2980b9 0%, #3498db 100%);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.5);
+        }
+        .option-button.selected {
+            background: linear-gradient(180deg, #f1c40f 0%, #e67e22 100%); /* Orange-gold gradient for selected */
+            color: #2c3e50;
+            transform: scale(1.04);
+            box-shadow: 0 0 0 5px #f1c40f, 0 12px 20px rgba(0, 0, 0, 0.5);
+        }
+        .option-button.correct {
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient for correct */
+            color: white;
+            box-shadow: 0 0 0 5px #2ecc71, 0 12px 20px rgba(0, 0, 0, 0.5);
+        }
+        .option-button.incorrect {
+            background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); /* Red gradient for incorrect */
+            color: white;
+            box-shadow: 0 0 0 5px #e74c3c, 0 12px 20px rgba(0, 0, 0, 0.5);
+        }
+        .option-button.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(80%); /* Visually indicate disabled */
+        }
+
+        .control-buttons button, .lifeline-buttons button {
+            background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); /* Purple gradient */
+            color: white;
+            padding: 1.2rem 2.5rem;
+            border-radius: 1rem;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            border: none;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            margin: 0 0.8rem;
+            display: inline-flex; /* For icon + text alignment */
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .control-buttons button:hover, .lifeline-buttons button:hover:not(.disabled) {
+            background: linear-gradient(180deg, #8e44ad 0%, #9b59b6 100%);
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 18px rgba(0, 0, 0, 0.4);
+        }
+        .control-buttons button.disabled, .lifeline-buttons button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: linear-gradient(180deg, #6b46c1 0%, #5a32a3 100%); /* Darker purple when disabled */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .message {
+            font-size: 1.6rem; /* Larger font */
+            margin-top: 2rem;
+            font-weight: bold;
+            min-height: 50px;
+            color: #ecf0f1;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        .prize-display {
+            font-size: 2.8rem; /* Even larger prize display */
+            font-weight: 900;
+            margin-bottom: 2.5rem;
+            color: #f1c40f; /* Brighter gold */
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Confetti styles */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 9999;
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; /* Larger confetti */
+            height: 12px;
+            background-color: #ffeb3b; /* Yellow */
+            opacity: 0;
+            animation: confetti-fall 4s forwards; /* Longer animation */
+            border-radius: 50%;
+        }
+        .confetti:nth-child(2n) { background-color: #2ecc71; } /* Green */
+        .confetti:nth-child(3n) { background-color: #3498db; } /* Blue */
+        .confetti:nth-child(4n) { background-color: #9b59b6; } /* Purple */
+        .confetti:nth-child(5n) { background-color: #e74c3c; } /* Red */
+        .confetti:nth-child(6n) { background-color: #f39c12; } /* Orange */
+        .confetti:nth-child(7n) { background-color: #c0392b; } /* Dark Red */
+        .confetti:nth-child(8n) { background-color: #27ae60; } /* Dark Green */
+
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0; }
+        }
+
+        /* Volume slider */
+        .volume-control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ecf0f1;
+            z-index: 10;
+        }
+        .volume-control input[type="range"] {
+            -webkit-appearance: none;
+            width: 100px;
+            height: 8px;
+            background: #4a5568;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .volume-control input[type="range"]:hover {
+            opacity: 1;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        .volume-control input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+
+        /* Universitários display */
+        .universitarios-results {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: left;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #ecf0f1;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .universitarios-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .universitarios-bar {
+            height: 18px; /* Taller bars */
+            background-color: #2ecc71; /* Green for bars */
+            border-radius: 3px;
+            width: 0%;
+            transition: width 1.2s ease-out; /* Slower animation */
+        }
+        .universitarios-percentage {
+            font-weight: bold;
+            width: 50px; /* Wider for percentages */
+            text-align: right;
+        }
+
+        /* Prize Ladder */
+        .prize-ladder-container {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: flex-start;
+            gap: 5px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            max-height: 85vh; /* Taller */
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+            z-index: 5;
+            border: 2px solid #34495e;
+        }
+        .prize-ladder-item {
+            font-size: 1rem; /* Slightly larger */
+            color: #bdc3c7; /* Lighter gray */
+            padding: 8px 15px;
+            border-radius: 8px;
+            width: 140px; /* Wider for alignment */
+            text-align: right;
+            transition: all 0.4s ease-in-out;
+        }
+        .prize-ladder-item.current-prize {
+            background: linear-gradient(90deg, #f1c40f 0%, #e67e22 100%); /* Gold-orange gradient */
+            color: #2c3e50;
+            font-weight: 900; /* Extra bold */
+            transform: scale(1.1);
+            box-shadow: 0 0 15px #f1c40f, 0 0 25px rgba(241, 196, 15, 0.5);
+            border: 2px solid #f39c12;
+        }
+        .prize-ladder-item.safe-level {
+            border: 2px solid #2ecc71; /* Brighter green border for safe levels */
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        /* Timer */
+        .timer-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1.5rem auto;
+        }
+        .timer-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(#e74c3c 0%, #e74c3c var(--timer-progress), transparent var(--timer-progress), transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: white;
+            border: 5px solid #c0392b;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: background 0.5s linear; /* Smooth color change */
+        }
+        .timer-circle.warning {
+            background: conic-gradient(#f39c12 0%, #f39c12 var(--timer-progress), transparent var(--timer-progress), transparent 100%);
+            border-color: #e67e22;
+        }
+        .timer-circle.danger {
+            background: conic-gradient(#e74c3c 0%, #e74c3c var(--timer-progress), transparent var(--timer-progress), transparent 100%);
+            border-color: #c0392b;
+        }
+
+        /* Modal for Phone a Friend */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: linear-gradient(160deg, #34495e 0%, #2c3e50 100%); /* Consistent gradient */
+            padding: 3rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
+            color: #ecf0f1;
+            max-width: 550px; /* Slightly larger */
+            width: 90%;
+            text-align: center;
+            transform: translateY(-50px);
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .modal-content h3 {
+            font-size: 2.2rem; /* Larger heading */
+            font-weight: 900;
+            margin-bottom: 1.8rem;
+            color: #f1c40f; /* Gold heading */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        .modal-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+        .modal-content button {
+            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient */
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .modal-content button:hover {
+            background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Leaderboard Screen */
+        #leaderboardScreen {
+            background: linear-gradient(160deg, #2c3e50 0%, #1a2533 100%);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            padding: 3.5rem;
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+            color: #ecf0f1;
+            border: 4px solid #34495e;
+            position: relative;
+            z-index: 1;
+        }
+        #leaderboardScreen h2 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #f1c40f;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            margin-bottom: 2.5rem;
+            letter-spacing: 2px;
+        }
+        #leaderboardList {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 500px;
+        }
+        #leaderboardList li {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 1rem 1.5rem;
+            margin-bottom: 10px;
+            border-radius: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease-in-out;
+        }
+        #leaderboardList li:hover {
+            background-color: rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+        #leaderboardList li .rank {
+            color: #f1c40f;
+            font-size: 1.4rem;
+            margin-right: 15px;
+        }
+        #leaderboardList li .name {
+            flex-grow: 1;
+            text-align: left;
+        }
+        #leaderboardList li .score {
+            color: #2ecc71;
+            font-size: 1.3rem;
+        }
+        #leaderboardLoading {
+            color: #bdc3c7;
+            font-size: 1.2rem;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">SHOW DO MILHÃO <br>DA EMBRIOLOGIA</h1>
+
+        <!-- Volume Control -->
+        <div class="volume-control">
+            <label for="volumeSlider"><i class="fas fa-volume-up"></i></label>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+
+        <!-- Audio Elements -->
+        <audio id="backgroundMusic" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+            Seu navegador não suporta o elemento de áudio.
+        </audio>
+        <audio id="silvioVoiceCorrect">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" type="audio/mpeg">
+            <!-- Replace with actual correct answer audio -->
+        </audio>
+        <audio id="silvioVoiceIncorrect">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" type="audio/mpeg">
+            <!-- Replace with actual incorrect answer audio -->
+        </audio>
+        <audio id="silvioVoiceQuestion">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" type="audio/mpeg">
+            <!-- Replace with actual question intro audio -->
+        </audio>
+        <audio id="buttonClickSound">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" type="audio/mpeg">
+            <!-- Replace with actual button click audio -->
+        </audio>
+        <audio id="lifelineSound">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" type="audio/mpeg">
+            <!-- Replace with actual lifeline usage audio -->
+        </audio>
+        <audio id="timerSound">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" type="audio/mpeg">
+            <!-- Replace with actual timer ticking audio -->
+        </audio>
+        <audio id="phoneRingSound">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" type="audio/mpeg">
+            <!-- Replace with actual phone ring audio -->
+        </audio>
+        <audio id="gameOverSound">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" type="audio/mpeg">
+            <!-- Replace with actual game over audio -->
+        </audio>
+
+        <div id="startScreen">
+            <p class="text-xl mb-6 text-gray-300">Quem vai comandar o jogo? Escolha o apresentador!</p>
+            <div class="character-selection mb-10">
+                <div class="character-option selected-char" data-character="male">
+                    <i class="fas fa-male"></i>
+                </div>
+                <div class="character-option" data-character="female">
+                    <i class="fas fa-female"></i>
+                </div>
+            </div>
+            <p class="text-xl mb-10 text-gray-300">Teste seus conhecimentos sobre Embriologia e se torne o milionário da ciência!</p>
+            <button id="startButton" class="control-buttons button">JOGAR!</button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div class="prize-display">Prêmio Atual: R$ <span id="prizeDisplay">0</span></div>
+            <div class="timer-container">
+                <div class="timer-circle" id="timerCircle"></div>
+            </div>
+            <div class="lifeline-buttons flex justify-center mb-6 flex-wrap gap-4">
+                <button id="fiftyFiftyButton" class="button"><i class="fas fa-cut"></i> 50/50</button>
+                <button id="skipButton" class="button"><i class="fas fa-forward"></i> Pular</button>
+                <button id="universitariosButton" class="button"><i class="fas fa-users"></i> Universitários</button>
+                <button id="phoneAFriendButton" class="button"><i class="fas fa-phone-alt"></i> Telefone</button>
+            </div>
+            <div class="question-box" id="questionText"></div>
+            <div class="options-grid" id="optionsContainer">
+                <!-- Options will be dynamically inserted here -->
+            </div>
+            <div class="universitarios-results hidden" id="universitariosResults">
+                <!-- Universitários results will be displayed here -->
+            </div>
+            <div class="message" id="feedbackMessage"></div>
+            <div class="control-buttons flex justify-center mt-6 flex-wrap gap-4">
+                <button id="confirmButton" class="button hidden">Confirmar Resposta</button>
+                <button id="stopButton" class="button hidden">Parar</button>
+                <button id="nextButton" class="button hidden">Próxima Pergunta</button>
+                <button id="playAgainButton" class="button hidden">Jogar Novamente</button>
+            </div>
+        </div>
+
+        <div id="endScreen" class="hidden">
+            <h2 class="title text-green-400 mb-8">Fim de Jogo!</h2>
+            <p class="text-3xl font-bold mb-4 text-white">Seu Prêmio Final:</p>
+            <p class="text-5xl font-extrabold text-yellow-400 mb-8" id="finalPrizeDisplay">R$ 0</p>
+            <button id="viewLeaderboardButton" class="control-buttons button mb-4">Ver Placar de Líderes</button>
+            <button id="playAgainEndButton" class="control-buttons button">Jogar Novamente</button>
+        </div>
+
+        <div id="leaderboardScreen" class="hidden">
+            <h2 class="title">LIGA DO MILHÃO</h2>
+            <div id="leaderboardLoading">Carregando placar de líderes...</div>
+            <ul id="leaderboardList">
+                <!-- Leaderboard items will be loaded here -->
+            </ul>
+            <button id="backToStartButton" class="control-buttons button mt-8">Voltar ao Início</button>
+        </div>
+    </div>
+
+    <!-- Prize Ladder Visualization -->
+    <div id="prizeLadderContainer" class="prize-ladder-container hidden"></div>
+
+    <!-- Confetti Container -->
+    <div id="confettiContainer" class="confetti-container hidden"></div>
+
+    <!-- Phone a Friend Modal -->
+    <div id="phoneAFriendModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>Telefone para um Amigo</h3>
+            <p id="phoneAFriendMessage"></p>
+            <button id="closePhoneAFriendModal">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variáveis globais (disponibilizadas pelo ambiente Canvas)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicializar Firebase
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous'; // Default userId
+
+        // Autenticação e inicialização do Firestore
+        async function initializeFirebaseAndAuth() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Tenta autenticar com o token fornecido pelo ambiente
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    // Se não houver token, autentica anonimamente
+                    await signInAnonymously(auth);
+                }
+
+                // Observa mudanças no estado de autenticação
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Usuário autenticado:", userId);
+                    } else {
+                        console.log("Usuário deslogado ou anônimo.");
+                        userId = crypto.randomUUID(); // Fallback for unauthenticated
+                    }
+                });
+            } catch (error) {
+                console.error("Erro ao inicializar Firebase ou autenticar:", error);
+                // Fallback para userId se Firebase falhar
+                userId = crypto.randomUUID();
+            }
+        }
+
+        // Adicionar pontuação ao placar de líderes
+        window.addScoreToLeaderboard = async (playerName, score) => {
+            if (!db) {
+                console.error("Firestore não inicializado.");
+                return;
+            }
+            try {
+                const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard`);
+                await addDoc(leaderboardCollectionRef, {
+                    playerName: playerName,
+                    score: score,
+                    timestamp: serverTimestamp(),
+                    userId: userId // Store userId for potential future use
+                });
+                console.log("Pontuação adicionada ao placar de líderes!");
+            } catch (e) {
+                console.error("Erro ao adicionar documento: ", e);
+            }
+        };
+
+        // Carregar e exibir o placar de líderes
+        window.fetchLeaderboard = async () => {
+            if (!db) {
+                console.error("Firestore não inicializado.");
+                return;
+            }
+            const leaderboardList = document.getElementById('leaderboardList');
+            const leaderboardLoading = document.getElementById('leaderboardLoading');
+            leaderboardList.innerHTML = '';
+            leaderboardLoading.classList.remove('hidden');
+
+            try {
+                const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard`);
+                // Firestore does not support orderBy without indexes, so fetch all and sort in memory
+                const q = query(leaderboardCollectionRef);
+                const querySnapshot = await getDocs(q);
+                let scores = [];
+                querySnapshot.forEach((doc) => {
+                    scores.push(doc.data());
+                });
+
+                // Sort scores in memory (descending by score)
+                scores.sort((a, b) => b.score - a.score);
+
+                leaderboardLoading.classList.add('hidden');
+                if (scores.length === 0) {
+                    leaderboardList.innerHTML = '<li class="text-center text-gray-400">Nenhuma pontuação ainda. Seja o primeiro!</li>';
+                } else {
+                    scores.slice(0, 10).forEach((data, index) => { // Display top 10
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            <span class="rank">${index + 1}º</span>
+                            <span class="name">${data.playerName || 'Jogador Anônimo'}</span>
+                            <span class="score">R$ ${data.score.toLocaleString('pt-BR')}</span>
+                        `;
+                        leaderboardList.appendChild(listItem);
+                    });
+                }
+            } catch (e) {
+                console.error("Erro ao buscar placar de líderes: ", e);
+                leaderboardLoading.classList.add('hidden');
+                leaderboardList.innerHTML = '<li class="text-center text-red-400">Erro ao carregar placar.</li>';
+            }
+        };
+
+        // Chamar a inicialização do Firebase quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', initializeFirebaseAndAuth);
+    </script>
+
+    <script>
+        // Array de perguntas sobre embriologia
+        const questions = [
+            {
+                question: "Qual o nome do processo de fusão dos gametas masculino e feminino?",
+                options: ["Ovulação", "Fecundação", "Nidação", "Gastrulação"],
+                correctAnswer: "Fecundação"
+            },
+            {
+                question: "Onde ocorre a fecundação na maioria dos mamíferos, incluindo humanos?",
+                options: ["Útero", "Ovário", "Tuba Uterina", "Vagina"],
+                correctAnswer: "Tuba Uterina"
+            },
+            {
+                question: "Qual estrutura se forma após a fecundação e antes da clivagem?",
+                options: ["Mórula", "Blastocisto", "Zigoto", "Gástrula"],
+                correctAnswer: "Zigoto"
+            },
+            {
+                question: "Durante qual período do desenvolvimento embrionário ocorre a formação dos três folhetos germinativos (ectoderma, mesoderma, endoderma)?",
+                options: ["Segmentação", "Gastrulação", "Organogênese", "Nidação"],
+                correctAnswer: "Gastrulação"
+            },
+            {
+                question: "Qual folheto germinativo dá origem ao sistema nervoso e à epiderme?",
+                options: ["Mesoderma", "Endoderma", "Ectoderma", "Notocorda"],
+                correctAnswer: "Ectoderma"
+            },
+            {
+                question: "O que é nidação?",
+                options: ["A formação do tubo neural", "A implantação do blastocisto no endométrio", "A divisão celular do zigoto", "A formação da placenta"],
+                correctAnswer: "A implantação do blastocisto no endométrio"
+            },
+            {
+                question: "Qual a função do saco vitelínico em embriões humanos?",
+                options: ["Produção de hormônios", "Troca gasosa", "Formação de células sanguíneas iniciais", "Armazenamento de nutrientes"],
+                correctAnswer: "Formação de células sanguíneas iniciais"
+            },
+            {
+                question: "Qual o nome do processo de formação de órgãos a partir dos folhetos germinativos?",
+                options: ["Gastrulação", "Neurulação", "Organogênese", "Clivagem"],
+                correctAnswer: "Organogênese"
+            },
+            {
+                question: "A notocorda, uma estrutura importante no desenvolvimento embrionário, dá origem a qual parte do corpo?",
+                options: ["Cérebro", "Coração", "Coluna vertebral", "Rins"],
+                correctAnswer: "Coluna vertebral"
+            },
+            {
+                question: "Qual o período de gestação normal em humanos?",
+                options: ["6 meses", "7 meses", "8 meses", "9 meses"],
+                correctAnswer: "9 meses"
+            },
+            {
+                question: "Qual o nome da camada mais externa do embrião que forma a placenta?",
+                options: ["Âmnio", "Córion", "Alantoide", "Saco Vitelínico"],
+                correctAnswer: "Córion"
+            },
+            {
+                question: "A síndrome de Down é causada por uma anomalia em qual cromossomo?",
+                options: ["Cromossomo 13", "Cromossomo 18", "Cromossomo 21", "Cromossomo X"],
+                correctAnswer: "Cromossomo 21"
+            },
+            {
+                question: "Qual estrutura embrionária é responsável pela proteção e hidratação do feto?",
+                options: ["Placenta", "Cordão Umbilical", "Saco Amniótico", "Córion"],
+                correctAnswer: "Saco Amniótico"
+            },
+            {
+                question: "O que é teratogênese?",
+                options: ["Formação de gêmeos", "Desenvolvimento de órgãos", "Formação de anomalias congênitas", "Crescimento celular"],
+                correctAnswer: "Formação de anomalias congênitas"
+            },
+            {
+                question: "Qual o nome da célula que resulta da fusão do espermatozoide com o óvulo?",
+                options: ["Gâmeta", "Mórula", "Zigoto", "Blastômero"],
+                correctAnswer: "Zigoto"
+            },
+            {
+                question: "Qual o folheto germinativo que dá origem aos músculos e ossos?",
+                options: ["Ectoderma", "Endoderma", "Mesoderma", "Notocorda"],
+                correctAnswer: "Mesoderma"
+            },
+            {
+                question: "A segmentação do zigoto resulta na formação de qual estrutura?",
+                options: ["Gástrula", "Nêurula", "Mórula", "Blastocisto"],
+                correctAnswer: "Mórula"
+            },
+            {
+                question: "Qual o nome do processo de formação do tubo neural?",
+                options: ["Gastrulação", "Neurulação", "Organogênese", "Clivagem"],
+                correctAnswer: "Neurulação"
+            },
+            {
+                question: "Qual a função do âmnio?",
+                options: ["Nutrição do embrião", "Proteção contra choques mecânicos", "Troca gasosa", "Formação da placenta"],
+                correctAnswer: "Proteção contra choques mecânicos"
+            },
+            {
+                question: "Em que estágio o embrião se implanta no útero?",
+                options: ["Zigoto", "Mórula", "Blastocisto", "Gástrula"],
+                correctAnswer: "Blastocisto"
+            }
+        ];
+
+
+        // Escada de prêmios (em Reais)
+        const prizeLadder = [
+            0,        // Início
+            1000,     // 1ª pergunta
+            2000,
+            3000,
+            4000,
+            5000,
+            10000,    // 6ª pergunta - Nível de segurança 1
+            20000,
+            30000,
+            40000,
+            50000,
+            100000,   // 11ª pergunta - Nível de segurança 2
+            200000,
+            300000,
+            400000,
+            500000,
+            1000000   // 16ª pergunta - Milhão!
+        ];
+
+        // Níveis de segurança (índices no prizeLadder)
+        const safePrizeLevels = [0, 6, 11]; // R$0, R$10.000, R$100.000
+
+        let currentQuestionIndex = 0;
+        let currentPrizeIndex = 0; // Índice na escada de prêmios
+        let selectedOption = null;
+        let gameStarted = false;
+        let fiftyFiftyUsed = false;
+        let skipUsed = false;
+        let universitariosUsed = false;
+        let phoneAFriendUsed = false;
+        let timerInterval;
+        let timeLeft = 30; // Tempo em segundos para cada pergunta
+        let selectedCharacter = 'male'; // Default character
+
+        // Elementos do DOM
+        const startScreen = document.getElementById('startScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const endScreen = document.getElementById('endScreen'); // New end screen
+        const leaderboardScreen = document.getElementById('leaderboardScreen'); // New leaderboard screen
+        const startButton = document.getElementById('startButton');
+        const playAgainEndButton = document.getElementById('playAgainEndButton'); // New play again button on end screen
+        const viewLeaderboardButton = document.getElementById('viewLeaderboardButton'); // New button to view leaderboard
+        const backToStartButton = document.getElementById('backToStartButton'); // Button to go back from leaderboard
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const feedbackMessage = document.getElementById('feedbackMessage');
+        const prizeDisplay = document.getElementById('prizeDisplay');
+        const finalPrizeDisplay = document.getElementById('finalPrizeDisplay'); // Final prize on end screen
+        const confirmButton = document.getElementById('confirmButton');
+        const stopButton = document.getElementById('stopButton'); // New stop button
+        const nextButton = document.getElementById('nextButton');
+        const playAgainButton = document.getElementById('playAgainButton'); // Play again button on game screen (for after correct answer)
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const silvioVoiceCorrect = document.getElementById('silvioVoiceCorrect');
+        const silvioVoiceIncorrect = document.getElementById('silvioVoiceIncorrect');
+        const silvioVoiceQuestion = document.getElementById('silvioVoiceQuestion');
+        const buttonClickSound = document.getElementById('buttonClickSound'); // New button click sound
+        const lifelineSound = document.getElementById('lifelineSound'); // New lifeline sound
+        const timerSound = document.getElementById('timerSound'); // Timer ticking sound
+        const phoneRingSound = document.getElementById('phoneRingSound'); // Phone ring sound
+        const gameOverSound = document.getElementById('gameOverSound'); // Game over sound
+        const fiftyFiftyButton = document.getElementById('fiftyFiftyButton');
+        const skipButton = document.getElementById('skipButton');
+        const universitariosButton = document.getElementById('universitariosButton');
+        const phoneAFriendButton = document.getElementById('phoneAFriendButton'); // New phone a friend button
+        const universitariosResults = document.getElementById('universitariosResults');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const confettiContainer = document.getElementById('confettiContainer');
+        const prizeLadderContainer = document.getElementById('prizeLadderContainer'); // Prize ladder visualization
+        const timerCircle = document.getElementById('timerCircle'); // Timer circle element
+        const phoneAFriendModal = document.getElementById('phoneAFriendModal');
+        const phoneAFriendMessage = document.getElementById('phoneAFriendMessage');
+        const closePhoneAFriendModal = document.getElementById('closePhoneAFriendModal');
+        const characterOptions = document.querySelectorAll('.character-option'); // Character selection options
+
+
+        // Função para tocar áudio
+        function playAudio(audioElement) {
+            audioElement.currentTime = 0; // Reinicia o áudio se já estiver tocando
+            audioElement.play().catch(e => console.error("Erro ao tocar áudio:", e));
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            startGame();
+        });
+
+        confirmButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            clearTimer();
+            checkAnswer();
+        });
+
+        stopButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            clearTimer();
+            stopGame();
+        });
+
+        nextButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            currentQuestionIndex++;
+            currentPrizeIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                endGame(true, prizeLadder[prizeLadder.length - 1]); // Ganhou o milhão!
+            }
+        });
+
+        playAgainButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            resetGame();
+            startGame();
+        });
+
+        playAgainEndButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            resetGame();
+            startGame();
+        });
+
+        viewLeaderboardButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            showLeaderboard();
+        });
+
+        backToStartButton.addEventListener('click', () => {
+            playAudio(buttonClickSound);
+            showStartScreen();
+        });
+
+        fiftyFiftyButton.addEventListener('click', () => {
+            if (!fiftyFiftyUsed && gameStarted && selectedOption === null) {
+                playAudio(lifelineSound);
+                useFiftyFifty();
+            }
+        });
+
+        skipButton.addEventListener('click', () => {
+            if (!skipUsed && gameStarted && selectedOption === null) {
+                playAudio(lifelineSound);
+                clearTimer(); // Clear timer when skipping
+                useSkip();
+            }
+        });
+
+        universitariosButton.addEventListener('click', () => {
+            if (!universitariosUsed && gameStarted && selectedOption === null) {
+                playAudio(lifelineSound);
+                useUniversitarios();
+            }
+        });
+
+        phoneAFriendButton.addEventListener('click', () => {
+            if (!phoneAFriendUsed && gameStarted && selectedOption === null) {
+                playAudio(phoneRingSound);
+                usePhoneAFriend();
+            }
+        });
+
+        closePhoneAFriendModal.addEventListener('click', () => {
+            phoneAFriendModal.classList.add('hidden');
+            phoneAFriendModal.classList.remove('show'); // Hide modal with transition
+        });
+
+        volumeSlider.addEventListener('input', (event) => {
+            const volume = event.target.value;
+            backgroundMusic.volume = volume;
+            silvioVoiceCorrect.volume = volume;
+            silvioVoiceIncorrect.volume = volume;
+            silvioVoiceQuestion.volume = volume;
+            buttonClickSound.volume = volume;
+            lifelineSound.volume = volume;
+            timerSound.volume = volume;
+            phoneRingSound.volume = volume;
+            gameOverSound.volume = volume;
+        });
+
+        characterOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelector('.character-option.selected-char').classList.remove('selected-char');
+                option.classList.add('selected-char');
+                selectedCharacter = option.dataset.character;
+            });
+        });
+
+        // Game Flow Functions
+        function showScreen(screenToShow) {
+            const screens = [startScreen, gameScreen, endScreen, leaderboardScreen];
+            screens.forEach(screen => {
+                if (screen === screenToShow) {
+                    screen.classList.remove('hidden');
+                } else {
+                    screen.classList.add('hidden');
+                }
+            });
+        }
+
+        function showStartScreen() {
+            resetGame();
+            showScreen(startScreen);
+        }
+
+        function startGame() {
+            showScreen(gameScreen);
+            prizeLadderContainer.classList.remove('hidden'); // Show prize ladder
+            backgroundMusic.play().catch(e => console.error("Erro ao tocar música de fundo:", e));
+            gameStarted = true;
+            loadQuestion();
+            updateLifelineButtons();
+            confettiContainer.classList.add('hidden'); // Hide confetti on new game
+            renderPrizeLadder(); // Initial render of prize ladder
+        }
+
+        function loadQuestion() {
+            selectedOption = null;
+            feedbackMessage.textContent = '';
+            confirmButton.classList.add('hidden');
+            stopButton.classList.remove('hidden'); // Show stop button
+            nextButton.classList.add('hidden'); // Ensure next button is hidden on new question
+            playAgainButton.classList.add('hidden');
+            universitariosResults.classList.add('hidden'); // Hide universitarios results
+            phoneAFriendModal.classList.add('hidden'); // Hide phone a friend modal
+
+            animatePrizeDisplay(prizeLadder[currentPrizeIndex]);
+            updatePrizeLadderHighlight();
+
+            const questionData = questions[currentQuestionIndex];
+            questionText.textContent = questionData.question;
+            optionsContainer.innerHTML = '';
+
+            questionText.classList.remove('show');
+            setTimeout(() => {
+                questionText.classList.add('show');
+            }, 50);
+
+            questionData.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.addEventListener('click', () => selectOption(button, option));
+                optionsContainer.appendChild(button);
+
+                setTimeout(() => {
+                    button.classList.add('show');
+                }, 100 + index * 100);
+            });
+
+            document.querySelectorAll('.option-button').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('selected', 'correct', 'incorrect', 'disabled', 'hidden');
+            });
+
+            playAudio(silvioVoiceQuestion);
+            startTimer();
+        }
+
+        function animatePrizeDisplay(targetPrize) {
+            let current = parseInt(prizeDisplay.textContent.replace(/\D/g, '')) || 0;
+            const step = Math.ceil(Math.abs(targetPrize - current) / 50);
+            const increment = targetPrize > current ? step : -step;
+
+            const update = () => {
+                current += increment;
+                if ((increment > 0 && current >= targetPrize) || (increment < 0 && current <= targetPrize)) {
+                    current = targetPrize;
+                    prizeDisplay.textContent = current.toLocaleString('pt-BR');
+                    return;
+                }
+                prizeDisplay.textContent = current.toLocaleString('pt-BR');
+                requestAnimationFrame(update);
+            };
+            requestAnimationFrame(update);
+        }
+
+        function renderPrizeLadder() {
+            prizeLadderContainer.innerHTML = '';
+            for (let i = prizeLadder.length - 1; i >= 0; i--) {
+                const prize = prizeLadder[i];
+                const item = document.createElement('div');
+                item.classList.add('prize-ladder-item');
+                item.textContent = `R$ ${prize.toLocaleString('pt-BR')}`;
+                if (safePrizeLevels.includes(i)) {
+                    item.classList.add('safe-level');
+                }
+                item.dataset.index = i;
+                prizeLadderContainer.appendChild(item);
+            }
+            updatePrizeLadderHighlight();
+        }
+
+        function updatePrizeLadderHighlight() {
+            document.querySelectorAll('.prize-ladder-item').forEach(item => {
+                item.classList.remove('current-prize');
+                if (parseInt(item.dataset.index) === currentPrizeIndex) {
+                    item.classList.add('current-prize');
+                    setTimeout(() => {
+                        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+                }
+            });
+        }
+
+        function startTimer() {
+            clearTimer();
+            timeLeft = 30;
+            updateTimerDisplay();
+            timerSound.pause();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 10 && timeLeft > 0) {
+                    playAudio(timerSound);
+                } else if (timeLeft <= 0) {
+                    clearTimer();
+                    timerSound.pause();
+                    feedbackMessage.textContent = 'Tempo esgotado! Que pena!';
+                    feedbackMessage.style.color = '#e74c3c';
+                    const questionData = questions[currentQuestionIndex];
+                    const allOptionButtons = document.querySelectorAll('.option-button');
+                    allOptionButtons.forEach(btn => btn.disabled = true);
+                    allOptionButtons.forEach(btn => {
+                        if (btn.textContent === questionData.correctAnswer) {
+                            btn.classList.add('correct');
+                        }
+                    });
+                    let finalPrize = 0;
+                    for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
+                        if (currentPrizeIndex >= safePrizeLevels[i]) {
+                            finalPrize = prizeLadder[safePrizeLevels[i]];
+                            break;
+                        }
+                    }
+                    endGame(false, finalPrize);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const percentage = (timeLeft / 30) * 100;
+            timerCircle.style.setProperty('--timer-progress', `${percentage}%`);
+            timerCircle.textContent = timeLeft;
+
+            timerCircle.classList.remove('warning', 'danger');
+            if (timeLeft <= 10 && timeLeft > 5) {
+                timerCircle.classList.add('warning');
+            } else if (timeLeft <= 5 && timeLeft > 0) {
+                timerCircle.classList.add('danger');
+            }
+        }
+
+        function clearTimer() {
+            clearInterval(timerInterval);
+            timerSound.pause();
+            timerSound.currentTime = 0;
+        }
+
+        function selectOption(button, option) {
+            document.querySelectorAll('.option-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            button.classList.add('selected');
+            selectedOption = option;
+            confirmButton.classList.remove('hidden');
+            stopButton.classList.remove('hidden');
+        }
+
+        function checkAnswer() {
+            if (!selectedOption) {
+                feedbackMessage.textContent = 'Por favor, selecione uma opção!';
+                return;
+            }
+
+            clearTimer();
+
+            const questionData = questions[currentQuestionIndex];
+            const allOptionButtons = document.querySelectorAll('.option-button');
+
+            allOptionButtons.forEach(btn => btn.disabled = true);
+
+            confirmButton.classList.add('hidden');
+            stopButton.classList.add('hidden');
+
+            if (selectedOption === questionData.correctAnswer) {
+                feedbackMessage.textContent = 'Certa Resposta! Muito bem! Clique em "Próxima Pergunta" para continuar.';
+                feedbackMessage.style.color = '#2ecc71';
+                playAudio(silvioVoiceCorrect);
+                allOptionButtons.forEach(btn => {
+                    if (btn.textContent === questionData.correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                });
+                nextButton.classList.remove('hidden'); // This is where the button is shown
+            } else {
+                feedbackMessage.textContent = `Que pena! A resposta correta era: ${questionData.correctAnswer}`;
+                feedbackMessage.style.color = '#e74c3c';
+                playAudio(silvioVoiceIncorrect);
+                allOptionButtons.forEach(btn => {
+                    if (btn.textContent === selectedOption) {
+                        btn.classList.add('incorrect');
+                    }
+                    if (btn.textContent === questionData.correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                });
+                let finalPrize = 0;
+                for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
+                    if (currentPrizeIndex >= safePrizeLevels[i]) {
+                        finalPrize = prizeLadder[safePrizeLevels[i]];
+                        break;
+                    }
+                }
+                endGame(false, finalPrize);
+            }
+        }
+
+        function stopGame() {
+            clearTimer();
+            let finalPrize = 0;
+            for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
+                if (currentPrizeIndex >= safePrizeLevels[i]) {
+                    finalPrize = prizeLadder[safePrizeLevels[i]];
+                    break;
+                }
+            }
+            feedbackMessage.textContent = `Você parou o jogo e levou: R$ ${finalPrize.toLocaleString('pt-BR')}!`;
+            feedbackMessage.style.color = '#f1c40f';
+            
+            setTimeout(() => {
+                endGame(false, finalPrize); // Go to end screen with the stopped prize
+            }, 2000);
+        }
+
+        function endGame(wonMillion, finalPrize = 0) {
+            clearTimer();
+            gameScreen.classList.add('hidden');
+            prizeLadderContainer.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            finalPrizeDisplay.textContent = `R$ ${finalPrize.toLocaleString('pt-BR')}`;
+
+            // Submit score to leaderboard
+            // Prompt for player name (simple for now, could be a modal)
+            let playerName = prompt("Parabéns! Digite seu nome para o placar de líderes:", "Jogador");
+            if (!playerName || playerName.trim() === "") {
+                playerName = "Anônimo";
+            }
+            window.addScoreToLeaderboard(playerName, finalPrize);
+
+
+            if (wonMillion) {
+                endScreen.querySelector('.title').textContent = 'PARABÉNS! VOCÊ GANHOU 1 MILHÃO DE REAIS!';
+                endScreen.querySelector('.title').classList.remove('text-green-400');
+                endScreen.querySelector('.title').classList.add('text-yellow-400');
+                triggerConfetti();
+            } else {
+                endScreen.querySelector('.title').textContent = 'Fim de Jogo!';
+                endScreen.querySelector('.title').classList.remove('text-yellow-400');
+                endScreen.querySelector('.title').classList.add('text-green-400');
+                playAudio(gameOverSound);
+            }
+
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+        }
+
+        function showLeaderboard() {
+            showScreen(leaderboardScreen);
+            window.fetchLeaderboard(); // Call global function to fetch leaderboard
+        }
+
+        function resetGame() {
+            clearTimer();
+            currentQuestionIndex = 0;
+            currentPrizeIndex = 0;
+            selectedOption = null;
+            gameStarted = false;
+            fiftyFiftyUsed = false;
+            skipUsed = false;
+            universitariosUsed = false;
+            phoneAFriendUsed = false;
+            feedbackMessage.textContent = '';
+            startScreen.classList.remove('hidden');
+            gameScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            leaderboardScreen.classList.add('hidden'); // Hide leaderboard
+            updateLifelineButtons();
+            confettiContainer.classList.add('hidden');
+            prizeDisplay.textContent = '0';
+            timerCircle.style.setProperty('--timer-progress', '100%');
+            timerCircle.textContent = '';
+            timerCircle.classList.remove('warning', 'danger');
+            prizeLadderContainer.classList.add('hidden');
+        }
+
+        function updateLifelineButtons() {
+            fiftyFiftyButton.disabled = fiftyFiftyUsed;
+            skipButton.disabled = skipUsed;
+            universitariosButton.disabled = universitariosUsed;
+            phoneAFriendButton.disabled = phoneAFriendUsed;
+
+            if (fiftyFiftyUsed) fiftyFiftyButton.classList.add('disabled'); else fiftyFiftyButton.classList.remove('disabled');
+            if (skipUsed) skipButton.classList.add('disabled'); else skipButton.classList.remove('disabled');
+            if (universitariosUsed) universitariosButton.classList.add('disabled'); else universitariosButton.classList.remove('disabled');
+            if (phoneAFriendUsed) phoneAFriendButton.classList.add('disabled'); else phoneAFriendButton.classList.remove('disabled');
+        }
+
+        function useFiftyFifty() {
+            if (fiftyFiftyUsed || !gameStarted || selectedOption !== null) return;
+
+            fiftyFiftyUsed = true;
+            updateLifelineButtons();
+
+            const questionData = questions[currentQuestionIndex];
+            const allOptions = Array.from(document.querySelectorAll('.option-button:not(.hidden)'));
+            const incorrectOptions = allOptions.filter(btn => btn.textContent !== questionData.correctAnswer);
+
+            let optionsToHide = [];
+            while (optionsToHide.length < 2 && incorrectOptions.length > 0) {
+                const randomIndex = Math.floor(Math.random() * incorrectOptions.length);
+                optionsToHide.push(incorrectOptions.splice(randomIndex, 1)[0]);
+            }
+
+            optionsToHide.forEach(btn => {
+                btn.classList.add('hidden');
+                btn.disabled = true;
+            });
+
+            feedbackMessage.textContent = 'Duas opções incorretas foram removidas!';
+            feedbackMessage.style.color = '#bdc3c7';
+        }
+
+        function useSkip() {
+            if (skipUsed || !gameStarted || selectedOption !== null) return;
+
+            skipUsed = true;
+            updateLifelineButtons();
+
+            feedbackMessage.textContent = 'Pergunta pulada! Você não perde pontos.';
+            feedbackMessage.style.color = '#bdc3c7';
+
+            currentQuestionIndex++;
+            currentPrizeIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                endGame(true, prizeLadder[prizeLadder.length - 1]);
+            }
+        }
+
+        function useUniversitarios() {
+            if (universitariosUsed || !gameStarted || selectedOption !== null) return;
+
+            universitariosUsed = true;
+            updateLifelineButtons();
+            universitariosResults.innerHTML = '';
+            universitariosResults.classList.remove('hidden');
+
+            const questionData = questions[currentQuestionIndex];
+            const options = questionData.options;
+            const correctAnswer = questionData.correctAnswer;
+
+            let votes = {};
+            let totalVotes = 100;
+
+            let correctPercentage = Math.floor(Math.random() * (70 - 40 + 1)) + 40;
+            votes[correctAnswer] = correctPercentage;
+            totalVotes -= correctPercentage;
+
+            let remainingOptions = options.filter(opt => opt !== correctAnswer);
+            let remainingVotesPerOption = Math.floor(totalVotes / remainingOptions.length);
+
+            remainingOptions.forEach(opt => {
+                votes[opt] = remainingVotesPerOption;
+            });
+
+            let remainder = totalVotes % remainingOptions.length;
+            if (remainder > 0 && remainingOptions.length > 0) {
+                for (let i = 0; i < remainder; i++) {
+                    const randomIndex = Math.floor(Math.random() * remainingOptions.length);
+                    votes[remainingOptions[randomIndex]]++;
+                }
+            }
+
+            options.forEach(option => {
+                const percentage = votes[option] || 0;
+                const barContainer = document.createElement('div');
+                barContainer.classList.add('universitarios-bar-container');
+                barContainer.innerHTML = `
+                    <span>${option}:</span>
+                    <div class="flex-grow bg-gray-600 rounded-full overflow-hidden">
+                        <div class="universitarios-bar" style="width: 0%;"></div>
+                    </div>
+                    <span class="universitarios-percentage">${percentage}%</span>
+                `;
+                universitariosResults.appendChild(barContainer);
+
+                setTimeout(() => {
+                    barContainer.querySelector('.universitarios-bar').style.width = `${percentage}%`;
+                }, 100);
+            });
+
+            feedbackMessage.textContent = 'Os universitários deram suas opiniões!';
+            feedbackMessage.style.color = '#bdc3c7';
+        }
+
+        function usePhoneAFriend() {
+            if (phoneAFriendUsed || !gameStarted || selectedOption !== null) return;
+
+            phoneAFriendUsed = true;
+            updateLifelineButtons();
+
+            const questionData = questions[currentQuestionIndex];
+            const correctAnswer = questionData.correctAnswer;
+            const options = questionData.options;
+
+            let friendMessage = "Hmm, essa é difícil... ";
+            const randomChance = Math.random();
+
+            if (randomChance < 0.6) {
+                friendMessage += `Tenho quase certeza que a resposta é a "${correctAnswer}".`;
+            } else if (randomChance < 0.9) {
+                const incorrectOptions = options.filter(opt => opt !== correctAnswer);
+                const hintOption = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
+                friendMessage += `Acho que pode ser a "${hintOption}", mas não tenho certeza.`;
+            } else {
+                friendMessage += "Não consigo te ajudar nessa, desculpe!";
+            }
+
+            phoneAFriendMessage.textContent = friendMessage;
+            phoneAFriendModal.classList.remove('hidden');
+            phoneAFriendModal.classList.add('show');
+
+            feedbackMessage.textContent = 'Seu amigo te deu uma dica!';
+            feedbackMessage.style.color = '#bdc3c7';
+        }
+
+        function triggerConfetti() {
+            confettiContainer.classList.remove('hidden');
+            for (let i = 0; i < 300; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.animationDelay = Math.random() * 4 + 's';
+                confetti.style.animationDuration = (3 + Math.random() * 3) + 's';
+                confetti.style.backgroundColor = ['#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#c0392b', '#27ae60'][Math.floor(Math.random() * 8)];
+                confettiContainer.appendChild(confetti);
+            }
+            setTimeout(() => {
+                confettiContainer.innerHTML = '';
+                confettiContainer.classList.add('hidden');
+            }, 6000);
+        }
+
+        // Garante que a música comece a tocar apenas após a interação do usuário
+        document.addEventListener('DOMContentLoaded', () => {
+            backgroundMusic.volume = volumeSlider.value;
+            silvioVoiceCorrect.volume = volumeSlider.value;
+            silvioVoiceIncorrect.volume = volumeSlider.value;
+            silvioVoiceQuestion.volume = volumeSlider.value;
+            buttonClickSound.volume = volumeSlider.value;
+            lifelineSound.volume = volumeSlider.value;
+            timerSound.volume = volumeSlider.value;
+            phoneRingSound.volume = volumeSlider.value;
+            gameOverSound.volume = volumeSlider.value;
+        });
+
+    </script>
+</body>
+</html>
