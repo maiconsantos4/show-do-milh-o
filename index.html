@@ -3,1839 +3,1224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Show do Milhão da Embriologia</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Show do Milhão de Embriologia</title>
+    <!-- Inclui Tailwind CSS para estilização rápida e responsiva -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Fonte Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+
+        let app;
+        let db;
+        let auth;
+        let userId;
+
+        window.firebaseInitialized = false; // Flag to indicate Firebase initialization status
+
+        async function initializeFirebaseAndAuth() {
+            try {
+                console.log("Firebase: Tentando inicializar...");
+                console.log("Firebase Config:", firebaseConfig);
+                console.log("App ID:", appId);
+
+                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                    console.error("Firebase: Configuração está vazia ou faltando a chave da API. O Firestore NÃO ESTARÁ DISPONÍVEL.");
+                    // In this error case, Firebase won't be fully initialized for Firestore operations.
+                    // We still call onFirebaseReady to allow the game to proceed without score saving.
+                    window.firebaseInitialized = false; // Explicitly false if config is bad
+                    if (window.onFirebaseReady) {
+                        window.onFirebaseReady();
+                    }
+                    return;
+                }
+
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Use a promise to ensure onAuthStateChanged has fired at least once
+                await new Promise(resolve => {
+                    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            console.log("Firebase: Utilizador autenticado:", userId);
+                        } else {
+                            // Attempt anonymous sign-in if not already signed in
+                            try {
+                                if (!auth.currentUser) { // Only sign in anonymously if no user is present
+                                    if (initialAuthToken) {
+                                        await signInWithCustomToken(auth, initialAuthToken);
+                                    } else {
+                                        await signInAnonymously(auth);
+                                    }
+                                    userId = auth.currentUser?.uid || crypto.randomUUID(); // Get UID after sign-in
+                                    console.log("Firebase: Utilizador anónimo ou autenticado via token:", userId);
+                                } else {
+                                    userId = auth.currentUser.uid; // Already authenticated
+                                    console.log("Firebase: Utilizador já autenticado:", userId);
+                                }
+                            } catch (anonError) {
+                                console.error("Firebase: Erro ao tentar login anónimo/token:", anonError);
+                                userId = crypto.randomUUID(); // Fallback to random UUID if anonymous sign-in fails
+                                console.log("Firebase: Falha na autenticação. A usar UUID aleatório:", userId);
+                            }
+                        }
+                        window.firebaseInitialized = true; // Set true only after userId is determined
+                        if (window.onFirebaseReady) {
+                            window.onFirebaseReady();
+                        }
+                        unsubscribe(); // Unsubscribe after the first state change
+                        resolve(); // Resolve the promise
+                    });
+                });
+
+            } catch (error) {
+                console.error("Firebase: Erro crítico ao inicializar ou autenticar:", error);
+                window.firebaseInitialized = false; // Critical failure, Firebase not ready
+                if (window.onFirebaseReady) {
+                    window.onFirebaseReady();
+                }
+            }
+        }
+
+        initializeFirebaseAndAuth();
+
+        // Expose Firebase objects globally for use in the main script
+        window.getFirestore = getFirestore;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.limit = limit;
+        window.getDocs = getDocs;
+        window.onSnapshot = onSnapshot;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.auth = auth; // Expose auth object
+        window.getAuth = getAuth; // Expose getAuth function
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.signInAnonymously = signInAnonymously;
+        window.appId = appId; // Expose appId
+        window.getUserId = () => userId; // Function to get current userId
+    </script>
+
     <style>
-        /* Base styles for body and game container */
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* Darker, richer background */
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); /* Fundo com gradiente */
+            color: #e2e8f0; /* Texto claro */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
             padding: 20px;
             box-sizing: border-box;
-            overflow: hidden; /* Prevent scroll for confetti */
+            overflow: hidden; /* Para evitar scroll com confetes */
         }
         .game-container {
-            background: linear-gradient(160deg, #2c3e50 0%, #1a2533 100%); /* Dark blue-gray gradient */
-            border-radius: 2rem; /* More rounded */
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7); /* Deeper shadow */
-            padding: 3.5rem;
-            max-width: 950px; /* Wider to accommodate elements */
+            background-color: #2d3748; /* Fundo do container */
+            border-radius: 1.5rem; /* Cantos arredondados */
+            padding: 2.5rem;
+            box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2); /* Sombra mais intensa */
+            max-width: 800px;
             width: 100%;
             text-align: center;
-            color: #ecf0f1; /* Lighter text */
-            border: 4px solid #34495e; /* Thicker, darker border */
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            /* Responsive padding for smaller screens */
-            padding: 2rem 1.5rem;
+            border: 2px solid #4a5568; /* Borda sutil */
+            position: relative; /* Para o modal e confetes */
+            z-index: 1; /* Garante que esteja acima dos confetes */
         }
-        @media (min-width: 768px) {
-            .game-container {
-                padding: 3.5rem;
-            }
-        }
-
-        /* Light pulse animation for game container */
-        .game-container::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 70%); /* Stronger light pulse */
-            animation: pulse-light 12s infinite alternate;
-            pointer-events: none;
-        }
-        @keyframes pulse-light {
-            0% { transform: scale(1); opacity: 0.08; }
-            100% { transform: scale(1.3); opacity: 0.2; }
-        }
-
-        /* Title styling */
-        .title {
-            font-size: 3rem; /* Even larger title */
-            font-weight: 900;
-            color: #f1c40f; /* Brighter gold */
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
-        }
-        @media (min-width: 768px) {
-            .title {
-                font-size: 4rem;
-                margin-bottom: 2.5rem;
-            }
-        }
-
-        /* Start Screen Specific Styles */
-        #startScreen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px; /* Ensure enough space for character */
-        }
-        .character-selection {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 2rem;
-        }
-        .character-option {
-            width: 100px; /* Smaller for mobile */
-            height: 100px;
-            background-color: #3498db;
-            border-radius: 50%;
+        .question-text {
+            min-height: 80px; /* Garante espaço para a pergunta */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            color: white;
-            border: 5px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4), 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-        @media (min-width: 640px) {
-            .character-option {
-                width: 120px;
-                height: 120px;
-                font-size: 2.5rem;
-            }
-        }
-        .character-option:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6), 0 8px 20px rgba(0, 0, 0, 0.5);
-        }
-        .character-option.selected-char {
-            border-color: #f1c40f; /* Gold border for selected character */
-            transform: scale(1.1);
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 10px 25px rgba(0, 0, 0, 0.6);
-        }
-
-        #startButton {
-            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient */
-            color: white;
-            padding: 1.2rem 3rem; /* Larger button */
-            border-radius: 1.5rem; /* More rounded */
-            font-size: 1.5rem; /* Larger font */
-            font-weight: bold;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-            transition: all 0.3s ease-in-out;
-            border: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        @media (min-width: 640px) {
-            #startButton {
-                padding: 1.5rem 4rem;
-                font-size: 1.8rem;
-            }
-        }
-        #startButton:hover {
-            background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Game Screen Specific Styles */
-        .question-box {
-            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); /* Darker blue-gray gradient */
-            padding: 2rem;
-            border-radius: 1.5rem; /* More rounded */
-            margin-bottom: 2rem;
-            font-size: 1.5rem; /* Larger font */
-            font-weight: bold;
-            color: #ecf0f1;
-            min-height: 120px; /* Taller */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            border: 3px solid #5fa2dd; /* Brighter blue border */
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3), 0 5px 15px rgba(0, 0, 0, 0.5);
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-        @media (min-width: 640px) {
-            .question-box {
-                padding: 2.5rem;
-                margin-bottom: 2.5rem;
-                font-size: 1.8rem;
-                min-height: 160px;
-            }
-        }
-        .question-box.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem; /* Larger gap */
-            margin-bottom: 2rem;
-        }
-        @media (min-width: 640px) {
-            .options-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 1.5rem;
-                margin-bottom: 3rem;
-            }
         }
         .option-button {
-            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%); /* Blue gradient */
+            background: linear-gradient(180deg, #4299e1 0%, #3182ce 100%); /* Gradiente azul */
             color: white;
-            padding: 1rem 1.5rem; /* Larger padding */
-            border-radius: 1rem; /* More rounded */
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out; /* Transição mais suave */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             border: none;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            width: 100%; /* Ocupa toda a largura disponível */
+            text-align: left; /* Alinha o texto à esquerda */
             position: relative;
             overflow: hidden;
-            opacity: 0;
-            transform: translateY(30px);
         }
-        @media (min-width: 640px) {
-            .option-button {
-                padding: 1.5rem 2rem;
-                font-size: 1.3rem;
-            }
+        .option-button:hover:not(:disabled) {
+            background: linear-gradient(180deg, #3182ce 0%, #2b6cb0 100%); /* Gradiente azul mais escuro no hover */
+            transform: translateY(-3px); /* Efeito de levantar */
+            box-shadow: 0 6px 10px -2px rgba(0, 0, 0, 0.2), 0 3px 5px -1px rgba(0, 0, 0, 0.1);
         }
-        .option-button.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .option-button:hover:not(.selected):not(.correct):not(.incorrect) {
-            background: linear-gradient(180deg, #2980b9 0%, #3498db 100%);
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.5);
-        }
-        .option-button.selected {
-            background: linear-gradient(180deg, #f1c40f 0%, #e67e22 100%); /* Orange-gold gradient for selected */
-            color: #2c3e50;
-            transform: scale(1.04);
-            box-shadow: 0 0 0 5px #f1c40f, 0 12px 20px rgba(0, 0, 0, 0.5);
+        .option-button:active:not(:disabled) {
+            transform: translateY(0); /* Volta ao normal no clique */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         .option-button.correct {
-            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient for correct */
-            color: white;
-            box-shadow: 0 0 0 5px #2ecc71, 0 12px 20px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(180deg, #48bb78 0%, #38a169 100%); /* Gradiente verde */
+            animation: pulse-correct 0.5s ease-out;
         }
         .option-button.incorrect {
-            background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); /* Red gradient for incorrect */
-            color: white;
-            box-shadow: 0 0 0 5px #e74c3c, 0 12px 20px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(180deg, #e53e3e 0%, #c53030 100%); /* Gradiente vermelho */
+            animation: shake-incorrect 0.5s ease-out;
         }
-        .option-button.disabled {
-            opacity: 0.4;
+        .option-button:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
-            filter: grayscale(80%); /* Visually indicate disabled */
+            background: #4a5568; /* Cinza para desabilitado */
         }
 
-        .control-buttons button, .lifeline-buttons button {
-            background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); /* Purple gradient */
-            color: white;
+        .start-button, .restart-button, .lifeline-button, .home-button, .difficulty-button, .audio-button {
+            background: linear-gradient(180deg, #ecc94b 0%, #d69e2e 100%); /* Gradiente amarelo */
+            color: #2d3748; /* Texto escuro */
             padding: 1rem 2rem;
-            border-radius: 1rem;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
+            border-radius: 0.75rem;
+            font-weight: 800; /* Mais negrito */
+            font-size: 1.25rem;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             border: none;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            margin: 0 0.5rem;
-            display: inline-flex; /* For icon + text alignment */
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            cursor: pointer;
+            text-transform: uppercase; /* Texto em maiúsculas */
+            letter-spacing: 0.05em; /* Espaçamento entre letras */
         }
-        @media (min-width: 640px) {
-            .control-buttons button, .lifeline-buttons button {
-                padding: 1.2rem 2.5rem;
-                font-size: 1.3rem;
-                margin: 0 0.8rem;
-                gap: 10px;
-            }
+        .start-button:hover, .restart-button:hover, .lifeline-button:hover:not(:disabled), .home-button:hover, .difficulty-button:hover, .audio-button:hover {
+            background: linear-gradient(180deg, #d69e2e 0%, #b7791f 100%); /* Amarelo mais escuro no hover */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 10px -2px rgba(0, 0, 0, 0.2), 0 3px 5px -1px rgba(0, 0, 0, 0.1);
         }
-        .control-buttons button:hover, .lifeline-buttons button:hover:not(.disabled) {
-            background: linear-gradient(180deg, #8e44ad 0%, #9b59b6 100%);
-            transform: translateY(-3px) scale(1.01);
-            box-shadow: 0 10px 18px rgba(0, 0, 0, 0.4);
-        }
-        .control-buttons button.disabled, .lifeline-buttons button.disabled {
+        .lifeline-button:disabled, .difficulty-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            background: linear-gradient(180deg, #6b46c1 0%, #5a32a3 100%); /* Darker purple when disabled */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: #718096; /* Cinza para desabilitado */
+            box-shadow: none;
+            transform: none;
         }
-        /* Animation for lifeline usage */
-        .lifeline-buttons button.used-animation {
-            animation: lifeline-pulse 0.5s ease-out;
-        }
-        @keyframes lifeline-pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-
-        .message {
-            font-size: 1.4rem; /* Larger font */
-            margin-top: 1.5rem;
-            font-weight: bold;
-            min-height: 40px;
-            color: #ecf0f1;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-        }
-        @media (min-width: 640px) {
-            .message {
-                font-size: 1.6rem;
-                margin-top: 2rem;
-                min-height: 50px;
-            }
-        }
-        .prize-display {
-            font-size: 2.2rem; /* Even larger prize display */
-            font-weight: 900;
-            margin-bottom: 2rem;
-            color: #f1c40f; /* Brighter gold */
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
-        }
-        @media (min-width: 640px) {
-            .prize-display {
-                font-size: 2.8rem;
-                margin-bottom: 2.5rem;
-            }
-        }
-        .hidden {
-            display: none;
-        }
-
-        /* Confetti styles */
-        .confetti-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 9999;
-        }
-        .confetti {
-            position: absolute;
-            width: 12px; /* Larger confetti */
-            height: 12px;
-            background-color: #ffeb3b; /* Yellow */
-            opacity: 0;
-            animation: confetti-fall 4s forwards; /* Longer animation */
-            border-radius: 50%;
-        }
-        .confetti:nth-child(2n) { background-color: #2ecc71; } /* Green */
-        .confetti:nth-child(3n) { background-color: #3498db; } /* Blue */
-        .confetti:nth-child(4n) { background-color: #9b59b6; } /* Purple */
-        .confetti:nth-child(5n) { background-color: #e74c3c; } /* Red */
-        .confetti:nth-child(6n) { background-color: #f39c12; } /* Orange */
-        .confetti:nth-child(7n) { background-color: #c0392b; } /* Dark Red */
-        .confetti:nth-child(8n) { background-color: #27ae60; } /* Dark Green */
-
-
-        @keyframes confetti-fall {
-            0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0; }
-        }
-
-        /* Volume slider */
-        .volume-control {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #ecf0f1;
-            z-index: 10;
-        }
-        .volume-control input[type="range"] {
-            -webkit-appearance: none;
-            width: 80px; /* Smaller for mobile */
-            height: 8px;
-            background: #4a5568;
-            border-radius: 5px;
-            outline: none;
-            opacity: 0.7;
-            transition: opacity .2s;
-        }
-        @media (min-width: 640px) {
-            .volume-control input[type="range"] {
-                width: 100px;
-            }
-        }
-        .volume-control input[type="range"]:hover {
-            opacity: 1;
-        }
-        .volume-control input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #3498db;
-            cursor: pointer;
-        }
-        .volume-control input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #3498db;
-            cursor: pointer;
-        }
-
-        /* Universitários display */
-        .universitarios-results {
-            margin-top: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            text-align: left;
-            max-width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-            color: #ecf0f1;
-            background-color: rgba(0, 0, 0, 0.3);
-            padding: 1rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-        .universitarios-bar-container {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .universitarios-bar {
-            height: 18px; /* Taller bars */
-            background-color: #2ecc71; /* Green for bars */
-            border-radius: 3px;
-            width: 0%;
-            transition: width 1.2s ease-out; /* Slower animation */
-        }
-        .universitarios-percentage {
-            font-weight: bold;
-            width: 50px; /* Wider for percentages */
-            text-align: right;
-        }
-
-        /* Prize Ladder */
-        .prize-ladder-container {
-            position: fixed; /* Changed to fixed for better mobile positioning */
-            top: 50%;
-            left: 10px; /* Adjusted for smaller screens */
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column-reverse;
-            align-items: flex-start;
-            gap: 5px;
-            padding: 10px; /* Smaller padding */
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            max-height: 90vh; /* Taller */
-            overflow-y: auto;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
-            z-index: 5;
-            border: 2px solid #34495e;
-            /* Hide on very small screens, or adjust width */
-            width: 120px;
-        }
-        @media (min-width: 768px) {
-            .prize-ladder-container {
-                left: 20px;
-                padding: 15px;
-                width: 180px; /* Wider for desktop */
-            }
-        }
-        @media (max-width: 480px) {
-            .prize-ladder-container {
-                display: none; /* Hide on very small phones to prevent overlap */
-            }
-        }
-
-        .prize-ladder-item {
-            font-size: 0.9rem; /* Slightly larger */
-            color: #bdc3c7; /* Lighter gray */
-            padding: 6px 10px;
-            border-radius: 8px;
-            width: 100%; /* Fill container width */
-            text-align: right;
-            transition: all 0.4s ease-in-out;
-        }
-        @media (min-width: 768px) {
-            .prize-ladder-item {
-                font-size: 1rem;
-                padding: 8px 15px;
-            }
-        }
-        .prize-ladder-item.current-prize {
-            background: linear-gradient(90deg, #f1c40f 0%, #e67e22 100%); /* Gold-orange gradient */
-            color: #2c3e50;
-            font-weight: 900; /* Extra bold */
-            transform: scale(1.1);
-            box-shadow: 0 0 15px #f1c40f, 0 0 25px rgba(241, 196, 15, 0.5);
-            border: 2px solid #f39c12;
-        }
-        .prize-ladder-item.safe-level {
-            border: 2px solid #2ecc71; /* Brighter green border for safe levels */
-            color: #2ecc71;
-            font-weight: bold;
-        }
-
-        /* Timer */
-        .timer-container {
-            position: relative;
-            width: 80px; /* Smaller timer for mobile */
-            height: 80px;
-            margin: 0 auto 1.5rem auto;
-        }
-        @media (min-width: 640px) {
-            .timer-container {
-                width: 100px;
-                height: 100px;
-            }
-        }
-        .timer-circle {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(#e74c3c 0%, #e74c3c var(--timer-progress), transparent var(--timer-progress), transparent 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            font-weight: 900;
+        .difficulty-button.selected {
+            background: linear-gradient(180deg, #48bb78 0%, #38a169 100%); /* Verde para selecionado */
             color: white;
-            border: 5px solid #c0392b;
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: background 0.5s linear; /* Smooth color change */
         }
-        @media (min-width: 640px) {
-            .timer-circle {
-                font-size: 2.2rem;
-            }
-        }
-        .timer-circle.warning {
-            background: conic-gradient(#f39c12 0%, #f39c12 var(--timer-progress), transparent var(--timer-progress), transparent 100%);
-            border-color: #e67e22;
-        }
-        .timer-circle.danger {
-            background: conic-gradient(#e74c3c 0%, #e74c3c var(--timer-progress), transparent var(--timer-progress), transparent 100%);
-            border-color: #c0392b;
+        .audio-button {
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            margin: 0 0.5rem;
         }
 
-        /* Modal for Phone a Friend */
+        /* Estilo para o modal de fim de jogo e placar */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+            background-color: rgba(0, 0, 0, 0.85); /* Fundo mais escuro */
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
-        }
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
+            z-index: 1000;
+            backdrop-filter: blur(5px); /* Efeito de desfoque */
+            animation: fadeIn 0.3s ease-out;
         }
         .modal-content {
-            background: linear-gradient(160deg, #34495e 0%, #2c3e50 100%); /* Consistent gradient */
-            padding: 2rem;
+            background-color: #2d3748;
+            padding: 3rem; /* Mais padding */
             border-radius: 1.5rem;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
-            color: #ecf0f1;
-            max-width: 450px; /* Slightly larger */
-            width: 90%;
             text-align: center;
-            transform: translateY(-50px);
-            opacity: 0;
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-        }
-        @media (min-width: 640px) {
-            .modal-content {
-                padding: 3rem;
-                max-width: 550px;
-            }
-        }
-        .modal-overlay.show .modal-content {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .modal-content h3 {
-            font-size: 1.8rem; /* Larger heading */
-            font-weight: 900;
-            margin-bottom: 1.5rem;
-            color: #f1c40f; /* Gold heading */
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-        }
-        @media (min-width: 640px) {
-            .modal-content h3 {
-                font-size: 2.2rem;
-                margin-bottom: 1.8rem;
-            }
-        }
-        .modal-content p {
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-        @media (min-width: 640px) {
-            .modal-content p {
-                font-size: 1.2rem;
-                margin-bottom: 2.5rem;
-            }
-        }
-        .modal-content button {
-            background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%); /* Green gradient */
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-        @media (min-width: 640px) {
-            .modal-content button {
-                padding: 1rem 2rem;
-            }
-        }
-        .modal-content button:hover {
-            background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5), 0 10px 15px -8px rgba(0, 0, 0, 0.3);
+            max-width: 550px;
+            width: 90%;
+            border: 2px solid #4a5568;
+            animation: scaleIn 0.3s ease-out;
         }
 
-        /* Leaderboard Screen */
-        #leaderboardScreen {
-            background: linear-gradient(160deg, #2c3e50 0%, #1a2533 100%);
-            border-radius: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
-            padding: 3.5rem;
-            max-width: 700px;
-            width: 100%;
-            text-align: center;
-            color: #ecf0f1;
-            border: 4px solid #34495e;
+        /* Timer Styles */
+        #timerDisplay {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #f6e05e; /* Amarelo vibrante */
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 10px rgba(246, 224, 94, 0.5);
             position: relative;
-            z-index: 1;
+            height: 40px; /* Altura da barra de progresso */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            background-color: #4a5568; /* Cor de fundo da barra */
         }
-        #leaderboardScreen h2 {
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: #f1c40f;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
+        #timerProgressBar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%; /* Começa cheio */
+            background-color: #48bb78; /* Verde para progresso */
+            transform-origin: left;
+            transition: width 1s linear; /* Transição suave */
         }
-        @media (min-width: 640px) {
-            #leaderboardScreen h2 {
-                font-size: 3.5rem;
-                margin-bottom: 2.5rem;
-            }
+        #timerDisplay.warning #timerProgressBar {
+            background-color: #e53e3e; /* Vermelho para aviso */
         }
-        #leaderboardList {
+        #timerText {
+            position: relative;
+            z-index: 2; /* Acima da barra de progresso */
+            color: white;
+            font-size: 2rem; /* Ajusta o tamanho do texto do timer */
+            font-weight: 800;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* Confetti Animation */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f0f; /* Cor padrão */
+            opacity: 0;
+            animation: fall 3s forwards;
+            border-radius: 50%;
+            pointer-events: none; /* Não interfere com cliques */
+            z-index: 999;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0; }
+        }
+
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes pulse-correct {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake-incorrect {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes pulse-warning {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* New animation for prize pulse */
+        @keyframes prize-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #68d391; } /* Slightly larger and brighter green */
+            100% { transform: scale(1); }
+        }
+        .prize-pulse {
+            animation: prize-pulse 0.5s ease-out;
+        }
+
+        /* Placar de Pontos */
+        .high-scores-list {
             list-style: none;
             padding: 0;
-            margin: 0 auto;
-            max-width: 500px;
+            margin-top: 1.5rem;
         }
-        #leaderboardList li {
-            background-color: rgba(0, 0, 0, 0.3);
-            padding: 0.8rem 1.2rem;
-            margin-bottom: 8px;
-            border-radius: 0.75rem;
+        .high-scores-list li {
+            background-color: #4a5568;
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 1.1rem;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease-in-out;
+            font-weight: 600;
         }
-        @media (min-width: 640px) {
-            #leaderboardList li {
-                padding: 1rem 1.5rem;
-                margin-bottom: 10px;
-                font-size: 1.2rem;
-            }
+        .high-scores-list li:nth-child(1) { background-color: #f6e05e; color: #2d3748; } /* Ouro */
+        .high-scores-list li:nth-child(2) { background-color: #a0aec0; color: #2d3748; } /* Prata */
+        .high-scores-list li:nth-child(3) { background-color: #c084fc; color: #2d3748; } /* Bronze */
+
+        /* Input de Nickname */
+        .nickname-input {
+            background-color: #4a5568;
+            border: 1px solid #6b7280;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: #e2e8f0;
+            width: 100%;
+            max-width: 250px;
+            text-align: center;
+            margin-top: 1rem;
         }
-        #leaderboardList li:hover {
-            background-color: rgba(0, 0, 0, 0.4);
-            transform: translateY(-2px);
+        .nickname-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
         }
-        #leaderboardList li .rank {
-            color: #f1c40f;
-            font-size: 1.3rem;
-            margin-right: 10px;
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #f6e05e;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
         }
-        @media (min-width: 640px) {
-            #leaderboardList li .rank {
-                font-size: 1.4rem;
-                margin-right: 15px;
-            }
-        }
-        #leaderboardList li .name {
-            flex-grow: 1;
-            text-align: left;
-        }
-        #leaderboardList li .score {
-            color: #2ecc71;
-            font-size: 1.2rem;
-        }
-        @media (min-width: 640px) {
-            #leaderboardList li .score {
-                font-size: 1.3rem;
-            }
-        }
-        #leaderboardLoading {
-            color: #bdc3c7;
-            font-size: 1.2rem;
-            margin-top: 20px;
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1 class="title">SHOW DO MILHÃO <br>DA EMBRIOLOGIA</h1>
+    <div id="welcomeScreen" class="game-container">
+        <h1 class="text-4xl font-extrabold mb-6 text-yellow-400">Bem-vindo ao Show do Milhão de Embriologia!</h1>
+        <p class="text-xl mb-8 text-gray-300">Teste seus conhecimentos e tente chegar ao milhão!</p>
 
-        <!-- Volume Control -->
-        <div class="volume-control">
-            <label for="volumeSlider"><i class="fas fa-volume-up"></i></label>
-            <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
-        </div>
-
-        <!-- Audio Elements - REPLACE THESE PLACEHOLDER URLs WITH YOUR ACTUAL GAME SOUNDS! -->
-        <audio id="backgroundMusic" loop>
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-            <!-- Sugestão: Música de fundo ambiente do programa -->
-        </audio>
-        <audio id="silvioVoiceCorrect">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" type="audio/mpeg">
-            <!-- Sugestão: Áudio da voz do Silvio Santos "Certa Resposta!" -->
-        </audio>
-        <audio id="silvioVoiceIncorrect">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" type="audio/mpeg">
-            <!-- Sugestão: Áudio da voz do Silvio Santos "Que pena!" ou som de resposta errada -->
-        </audio>
-        <audio id="silvioVoiceQuestion">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" type="audio/mpeg">
-            <!-- Sugestão: Áudio da voz do Silvio Santos introduzindo a pergunta -->
-        </audio>
-        <audio id="buttonClickSound">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" type="audio/mpeg">
-            <!-- Sugestão: Som de clique de botão -->
-        </audio>
-        <audio id="lifelineSound">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" type="audio/mpeg">
-            <!-- Sugestão: Som de uso de uma ajuda (50/50, pular, etc.) -->
-        </audio>
-        <audio id="timerSound" loop>
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" type="audio/mpeg">
-            <!-- Sugestão: Som de relógio/timer tique-taque -->
-        </audio>
-        <audio id="phoneRingSound">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" type="audio/mpeg">
-            <!-- Sugestão: Som de telefone tocando -->
-        </audio>
-        <audio id="gameOverSound">
-            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" type="audio/mpeg">
-            <!-- Sugestão: Som de fim de jogo / derrota -->
-        </audio>
-
-        <div id="startScreen">
-            <p class="text-xl mb-6 text-gray-300">Quem vai comandar o jogo? Escolha o apresentador!</p>
-            <div class="character-selection mb-10">
-                <div class="character-option selected-char" data-character="male">
-                    <i class="fas fa-male"></i>
-                </div>
-                <div class="character-option" data-character="female">
-                    <i class="fas fa-female"></i>
-                </div>
-            </div>
-            <p class="text-xl mb-10 text-gray-300">Teste seus conhecimentos sobre Embriologia e se torne o milionário da ciência!</p>
-            <button id="startButton" class="control-buttons button">JOGAR!</button>
-        </div>
-
-        <div id="gameScreen" class="hidden">
-            <div class="prize-display">Prêmio Atual: R$ <span id="prizeDisplay">0</span></div>
-            <div class="timer-container">
-                <div class="timer-circle" id="timerCircle"></div>
-            </div>
-            <div class="lifeline-buttons flex justify-center mb-6 flex-wrap gap-4">
-                <button id="fiftyFiftyButton" class="button"><i class="fas fa-cut"></i> 50/50</button>
-                <button id="skipButton" class="button"><i class="fas fa-forward"></i> Pular</button>
-                <button id="universitariosButton" class="button"><i class="fas fa-users"></i> Universitários</button>
-                <button id="phoneAFriendButton" class="button"><i class="fas fa-phone-alt"></i> Telefone</button>
-            </div>
-            <div class="question-box" id="questionText"></div>
-            <div class="options-grid" id="optionsContainer">
-                <!-- Options will be dynamically inserted here -->
-            </div>
-            <div class="universitarios-results hidden" id="universitariosResults">
-                <!-- Universitários results will be displayed here -->
-            </div>
-            <div class="message" id="feedbackMessage"></div>
-            <div class="control-buttons flex justify-center mt-6 flex-wrap gap-4">
-                <button id="confirmButton" class="button hidden">Confirmar Resposta</button>
-                <button id="stopButton" class="button hidden">Parar</button>
-                <button id="nextButton" class="button hidden">Próxima Pergunta</button>
-                <button id="playAgainButton" class="button hidden">Jogar Novamente</button>
+        <div class="mb-6">
+            <h3 class="text-2xl font-bold mb-4">Escolha a Dificuldade:</h3>
+            <div class="flex justify-center gap-4">
+                <button id="difficultyEasy" class="difficulty-button selected" data-difficulty="easy">Fácil</button>
+                <button id="difficultyMedium" class="difficulty-button" data-difficulty="medium">Médio</button>
+                <button id="difficultyHard" class="difficulty-button" data-difficulty="hard">Difícil</button>
             </div>
         </div>
 
-        <div id="endScreen" class="hidden">
-            <h2 class="title text-green-400 mb-8">Fim de Jogo!</h2>
-            <p class="text-3xl font-bold mb-4 text-white">Seu Prêmio Final:</p>
-            <p class="text-5xl font-extrabold text-yellow-400 mb-8" id="finalPrizeDisplay">R$ 0</p>
-            <button id="viewLeaderboardButton" class="control-buttons button mb-4">Ver Placar de Líderes</button>
-            <button id="playAgainEndButton" class="control-buttons button">Jogar Novamente</button>
-        </div>
-
-        <div id="leaderboardScreen" class="hidden">
-            <h2 class="title">LIGA DO MILHÃO</h2>
-            <div id="leaderboardLoading">Carregando placar de líderes...</div>
-            <ul id="leaderboardList">
-                <!-- Leaderboard items will be loaded here -->
-            </ul>
-            <button id="backToStartButton" class="control-buttons button mt-8">Voltar ao Início</button>
-        </div>
+        <button id="startButton" class="start-button mb-4">Começar Jogo</button>
+        <button id="showScoresButton" class="home-button">Ver Placar de Pontos</button>
     </div>
 
-    <!-- Prize Ladder Visualization -->
-    <div id="prizeLadderContainer" class="prize-ladder-container hidden"></div>
+    <div id="gameContainer" class="game-container hidden">
+        <h1 class="text-4xl font-extrabold mb-6 text-yellow-400">Show do Milhão de Embriologia</h1>
+        <p id="questionCounter" class="text-lg text-gray-400 mb-4"></p>
 
-    <!-- Confetti Container -->
-    <div id="confettiContainer" class="confetti-container hidden"></div>
+        <!-- Botões de áudio removidos -->
 
-    <!-- Phone a Friend Modal -->
-    <div id="phoneAFriendModal" class="modal-overlay hidden">
+        <div class="mb-8 p-4 bg-gray-700 rounded-xl shadow-inner">
+            <p class="text-xl font-semibold text-gray-300">Prêmio Atual:</p>
+            <p id="currentPrize" class="text-5xl font-extrabold text-green-400 mt-2">R$ 0</p>
+        </div>
+
+        <div id="timerDisplay" class="mb-6">
+            <div id="timerProgressBar"></div>
+            <span id="timerText">30</span>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button id="lifeline5050" class="lifeline-button text-base px-6 py-3">50/50</button>
+            <button id="lifelineSkip" class="lifeline-button text-base px-6 py-3">Pular Pergunta</button>
+            <button id="lifelineAudience" class="lifeline-button text-base px-6 py-3">Universitários</button>
+            <button id="lifelineExpert" class="lifeline-button text-base px-6 py-3">✨ Perguntar ao Especialista</button>
+        </div>
+
+        <div id="questionArea" class="mb-8">
+            <p id="questionText" class="text-2xl font-semibold mb-6 question-text"></p>
+            <div id="optionsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
+        </div>
+
+        <p id="message" class="text-xl font-medium mb-6 min-h-[30px]"></p>
+
+        <button id="nextQuestionButton" class="start-button hidden">Próxima Pergunta</button>
+    </div>
+
+    <div id="gameOverModal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h3>Telefone para um Amigo</h3>
-            <p id="phoneAFriendMessage"></p>
-            <button id="closePhoneAFriendModal">Fechar</button>
+            <h2 id="modalTitle" class="text-3xl font-bold mb-4 text-yellow-400"></h2>
+            <p id="modalMessage" class="text-xl mb-6 text-gray-300"></p>
+            <div id="nicknameInputContainer" class="hidden">
+                <input type="text" id="nicknameInput" class="nickname-input" placeholder="Seu Nickname" maxlength="15">
+                <button id="saveScoreButton" class="start-button mt-4">Salvar Pontuação</button>
+            </div>
+            <button id="modalRestartButton" class="restart-button mt-4">Jogar Novamente</button>
+            <button id="modalHomeButton" class="home-button mt-4">Voltar ao Início</button>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <div id="highScoresModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-3xl font-bold mb-4 text-yellow-400">Placar de Pontos</h2>
+            <div id="loadingScores" class="text-gray-400 mb-4">Carregando placar...</div>
+            <ul id="highScoresList" class="high-scores-list">
+                </ul>
+            <button id="closeScoresButton" class="home-button mt-6">Fechar</button>
+        </div>
+    </div>
+
     <script type="module">
-        // Importa as funções necessárias do Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Variáveis globais (disponibilizadas pelo ambiente Canvas)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // Inicializar Firebase
-        let app;
-        let db;
-        let auth;
-        let userId = 'anonymous'; // Default userId
-
-        // Função assíncrona para inicializar Firebase e autenticação
-        async function initializeFirebaseAndAuth() {
-            try {
-                // Inicializa o aplicativo Firebase
-                app = initializeApp(firebaseConfig);
-                // Obtém a instância do Firestore
-                db = getFirestore(app);
-                // Obtém a instância de autenticação
-                auth = getAuth(app);
-
-                // Tenta autenticar com o token fornecido pelo ambiente (se existir)
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    // Se não houver token, autentica anonimamente
-                    await signInAnonymously(auth);
-                }
-
-                // Observa mudanças no estado de autenticação do usuário
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        // Se o usuário estiver logado, usa seu UID
-                        userId = user.uid;
-                        console.log("Usuário autenticado:", userId);
-                    } else {
-                        // Se o usuário não estiver logado, gera um UUID aleatório como fallback
-                        console.log("Usuário deslogado ou anônimo.");
-                        userId = crypto.randomUUID();
-                    }
-                });
-            } catch (error) {
-                console.error("Erro ao inicializar Firebase ou autenticar:", error);
-                // Em caso de erro, ainda garante que userId tenha um valor
-                userId = crypto.randomUUID();
-            }
-        }
-
-        // Função global para adicionar pontuação ao placar de líderes no Firestore
-        window.addScoreToLeaderboard = async (playerName, score) => {
-            if (!db) {
-                console.error("Firestore não inicializado. Não foi possível adicionar pontuação.");
-                return;
-            }
-            try {
-                // Define a referência da coleção para o placar de líderes (dados públicos)
-                const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard`);
-                // Adiciona um novo documento com o nome do jogador, pontuação, timestamp e userId
-                await addDoc(leaderboardRef, {
-                    playerName: playerName,
-                    score: score,
-                    timestamp: serverTimestamp(), // Usa o timestamp do servidor para consistência
-                    userId: userId // Armazena o userId para rastreamento
-                });
-                console.log("Pontuação adicionada ao placar de líderes!");
-            } catch (e) {
-                console.error("Erro ao adicionar documento ao placar de líderes: ", e);
-            }
-        };
-
-        // Função global para carregar e exibir o placar de líderes do Firestore
-        window.fetchLeaderboard = async () => {
-            if (!db) {
-                console.error("Firestore não inicializado. Não foi possível buscar o placar de líderes.");
-                return;
-            }
-            const leaderboardList = document.getElementById('leaderboardList');
-            const leaderboardLoading = document.getElementById('leaderboardLoading');
-            leaderboardList.innerHTML = ''; // Limpa a lista existente
-            leaderboardLoading.classList.remove('hidden'); // Mostra o indicador de carregamento
-
-            try {
-                // Define a referência da coleção
-                const leaderboardCollectionRef = collection(db, `artifacts/${appId}/public/data/leaderboard`);
-                // Cria uma query sem orderBy para evitar a necessidade de índices complexos no Firestore
-                const q = query(leaderboardCollectionRef);
-                // Obtém os documentos da query
-                const querySnapshot = await getDocs(q);
-                let scores = [];
-                // Itera sobre os documentos e adiciona os dados à array de scores
-                querySnapshot.forEach((doc) => {
-                    scores.push(doc.data());
-                });
-
-                // Ordena as pontuações em memória (do maior para o menor)
-                scores.sort((a, b) => b.score - a.score);
-
-                leaderboardLoading.classList.add('hidden'); // Esconde o indicador de carregamento
-                if (scores.length === 0) {
-                    leaderboardList.innerHTML = '<li class="text-center text-gray-400">Nenhuma pontuação ainda. Seja o primeiro!</li>';
-                } else {
-                    // Exibe apenas as 10 melhores pontuações
-                    scores.slice(0, 10).forEach((data, index) => {
-                        const listItem = document.createElement('li');
-                        listItem.innerHTML = `
-                            <span class="rank">${index + 1}º</span>
-                            <span class="name">${data.playerName || 'Jogador Anônimo'}</span>
-                            <span class="score">R$ ${data.score.toLocaleString('pt-BR')}</span>
-                        `;
-                        leaderboardList.appendChild(listItem);
-                    });
-                }
-            } catch (e) {
-                console.error("Erro ao buscar placar de líderes: ", e);
-                leaderboardLoading.classList.add('hidden'); // Esconde o indicador mesmo em caso de erro
-                leaderboardList.innerHTML = '<li class="text-center text-red-400">Erro ao carregar placar.</li>';
-            }
-        };
-
-        // Chama a função de inicialização do Firebase quando o DOM estiver completamente carregado
-        document.addEventListener('DOMContentLoaded', initializeFirebaseAndAuth);
-    </script>
-
-    <script>
-        // Array de perguntas sobre embriologia
+        // Array de objetos de perguntas, cada um com a pergunta, opções, índice da resposta correta, prêmio e explicação.
         const questions = [
             {
-                question: "Qual o nome do processo de fusão dos gametas masculino e feminino?",
-                options: ["Ovulação", "Fecundação", "Nidação", "Gastrulação"],
-                correctAnswer: "Fecundação"
+                question: "Qual é o nome da primeira célula formada após a fertilização de um óvulo por um espermatozoide?",
+                options: ["A) Gâmeta", "B) Zigoto", "C) Blastocisto", "D) Mórula"],
+                correctAnswerIndex: 1,
+                prize: 1000,
+                explanation: "O **zigoto** é a célula diploide formada pela fusão de um óvulo e um espermatozoide, marcando o início do desenvolvimento embrionário."
             },
             {
-                question: "Onde ocorre a fecundação na maioria dos mamíferos, incluindo humanos?",
-                options: ["Útero", "Ovário", "Tuba Uterina", "Vagina"],
-                correctAnswer: "Tuba Uterina"
+                question: "Em que fase do desenvolvimento embrionário ocorre a implantação no útero?",
+                options: ["A) Mórula", "B) Gástrula", "C) Blastocisto", "D) Nêurula"],
+                correctAnswerIndex: 2,
+                prize: 5000,
+                explanation: "A implantação ocorre na fase de **blastocisto**, quando o embrião, já com uma cavidade interna e camadas celulares diferenciadas, se adere à parede uterina."
             },
             {
-                question: "Qual estrutura se forma após a fecundação e antes da clivagem?",
-                options: ["Mórula", "Blastocisto", "Zigoto", "Gástrula"],
-                correctAnswer: "Zigoto"
+                question: "Quais são as três camadas germinativas primárias formadas durante a gastrulação?",
+                options: ["A) Ectoderme, Mesoderme, Endoderme", "B) Epiblasto, Hipoblasto, Mesoderma", "C) Trofoblasto, Embrioblasto, Saco Vitelino", "D) Âmnio, Cório, Alantoide"],
+                correctAnswerIndex: 0,
+                prize: 10000,
+                explanation: "Durante a gastrulação, o embrião forma três camadas germinativas: a **ectoderme** (externa), a **mesoderme** (média) e a **endoderme** (interna), que darão origem a todos os tecidos e órgãos."
             },
             {
-                question: "Durante qual período do desenvolvimento embrionário ocorre a formação dos três folhetos germinativos (ectoderma, mesoderma, endoderma)?",
-                options: ["Segmentação", "Gastrulação", "Organogênese", "Nidação"],
-                correctAnswer: "Gastrulação"
+                question: "A partir de qual camada germinativa se desenvolvem o sistema nervoso e a epiderme?",
+                options: ["A) Mesoderme", "B) Endoderme", "C) Ectoderme", "D) Notocorda"],
+                correctAnswerIndex: 2,
+                prize: 50000,
+                explanation: "A **ectoderme** é a camada mais externa e dá origem a estruturas como o sistema nervoso central e periférico, a epiderme e seus anexos (cabelo, unhas), e o esmalte dentário."
             },
             {
-                question: "Qual folheto germinativo dá origem ao sistema nervoso e à epiderme?",
-                options: ["Mesoderma", "Endoderma", "Ectoderma", "Notocorda"],
-                correctAnswer: "Ectoderma"
+                question: "O que é a notocorda e qual sua função principal no desenvolvimento embrionário?",
+                options: ["A) Uma estrutura que forma o coração.", "B) Um precursor da medula espinhal e indutor da formação do tubo neural.", "C) A camada externa da pele.", "D) Uma estrutura que se torna o intestino."],
+                correctAnswerIndex: 1,
+                prize: 100000,
+                explanation: "A **notocorda** é uma estrutura mesodérmica que serve como eixo primário do embrião, induzindo a formação do tubo neural (precursor do sistema nervoso central) e contribuindo para o desenvolvimento da coluna vertebral."
             },
             {
-                question: "O que é nidação?",
-                options: ["A formação do tubo neural", "A implantação do blastocisto no endométrio", "A divisão celular do zigoto", "A formação da placenta"],
-                correctAnswer: "A implantação do blastocisto no endométrio"
+                question: "Qual é o processo de formação dos órgãos a partir das três camadas germinativas?",
+                options: ["A) Gastrulação", "B) Neurulação", "C) Organogênese", "D) Clivagem"],
+                correctAnswerIndex: 2,
+                prize: 500000,
+                explanation: "A **organogênese** é o processo de formação e desenvolvimento dos órgãos a partir das três camadas germinativas (ectoderme, mesoderme e endoderme) durante o período embrionário."
             },
             {
-                question: "Qual a função do saco vitelínico em embriões humanos?",
-                options: ["Produção de hormônios", "Troca gasosa", "Formação de células sanguíneas iniciais", "Armazenamento de nutrientes"],
-                correctAnswer: "Formação de células sanguíneas iniciais"
+                question: "A formação dos somitos, blocos de mesoderme paraxial que dão origem a vértebras, músculos e derme, é característica de qual período do desenvolvimento embrionário?",
+                options: ["A) Período pré-embrionário", "B) Período embrionário", "C) Período fetal", "D) Período de clivagem"],
+                correctAnswerIndex: 1,
+                prize: 1000000,
+                explanation: "Os **somitos** se formam durante o **período embrionário**, que vai da 3ª à 8ª semana de gestação, sendo crucial para a formação das estruturas segmentadas do corpo."
             },
             {
-                question: "Qual o nome do processo de formação de órgãos a partir dos folhetos germinativos?",
-                options: ["Gastrulação", "Neurulação", "Organogênese", "Clivagem"],
-                correctAnswer: "Organogênese"
+                question: "Qual estrutura embrionária é responsável pela troca de nutrientes e resíduos entre a mãe e o feto?",
+                options: ["A) Saco vitelino", "B) Âmnio", "C) Alantoide", "D) Placenta"],
+                correctAnswerIndex: 3,
+                prize: 2000000,
+                explanation: "A **placenta** é um órgão temporário que se forma durante a gravidez, essencial para a troca de oxigênio, nutrientes e resíduos entre a mãe e o feto, além de produzir hormônios importantes."
             },
             {
-                question: "A notocorda, uma estrutura importante no desenvolvimento embrionário, dá origem a qual parte do corpo?",
-                options: ["Cérebro", "Coração", "Coluna vertebral", "Rins"],
-                correctAnswer: "Coluna vertebral"
+                question: "O que é clivagem no desenvolvimento embrionário?",
+                options: ["A) A formação das camadas germinativas.", "B) Divisões mitóticas rápidas do zigoto sem crescimento celular.", "C) A implantação do blastocisto no útero.", "D) O processo de formação do tubo neural."],
+                correctAnswerIndex: 1,
+                prize: 5000000,
+                explanation: "A **clivagem** é uma série de divisões mitóticas rápidas do zigoto que aumentam o número de células (blastômeros) sem um aumento significativo no tamanho total do embrião."
             },
             {
-                question: "Qual o período de gestação normal em humanos?",
-                options: ["6 meses", "7 meses", "8 meses", "9 meses"],
-                correctAnswer: "9 meses"
-            },
-            {
-                question: "Qual o nome da camada mais externa do embrião que forma a placenta?",
-                options: ["Âmnio", "Córion", "Alantoide", "Saco Vitelínico"],
-                correctAnswer: "Córion"
-            },
-            {
-                question: "A síndrome de Down é causada por uma anomalia em qual cromossomo?",
-                options: ["Cromossomo 13", "Cromossomo 18", "Cromossomo 21", "Cromossomo X"],
-                correctAnswer: "Cromossomo 21"
-            },
-            {
-                question: "Qual estrutura embrionária é responsável pela proteção e hidratação do feto?",
-                options: ["Placenta", "Cordão Umbilical", "Saco Amniótico", "Córion"],
-                correctAnswer: "Saco Amniótico"
-            },
-            {
-                question: "O que é teratogênese?",
-                options: ["Formação de gêmeos", "Desenvolvimento de órgãos", "Formação de anomalias congênitas", "Crescimento celular"],
-                correctAnswer: "Formação de anomalias congênitas"
-            },
-            {
-                question: "Qual o nome da célula que resulta da fusão do espermatozoide com o óvulo?",
-                options: ["Gâmeta", "Mórula", "Zigoto", "Blastômero"],
-                correctAnswer: "Zigoto"
-            },
-            {
-                question: "Qual o folheto germinativo que dá origem aos músculos e ossos?",
-                options: ["Ectoderma", "Endoderma", "Mesoderma", "Notocorda"],
-                correctAnswer: "Mesoderma"
-            },
-            {
-                question: "A segmentação do zigoto resulta na formação de qual estrutura?",
-                options: ["Gástrula", "Nêurula", "Mórula", "Blastocisto"],
-                correctAnswer: "Mórula"
-            },
-            {
-                question: "Qual o nome do processo de formação do tubo neural?",
-                options: ["Gastrulação", "Neurulação", "Organogênese", "Clivagem"],
-                correctAnswer: "Neurulação"
-            },
-            {
-                question: "Qual a função do âmnio?",
-                options: ["Nutrição do embrião", "Proteção contra choques mecânicos", "Troca gasosa", "Formação da placenta"],
-                correctAnswer: "Proteção contra choques mecânicos"
-            },
-            {
-                question: "Em que estágio o embrião se implanta no útero?",
-                options: ["Zigoto", "Mórula", "Blastocisto", "Gástrula"],
-                correctAnswer: "Blastocisto"
+                question: "A partir de qual camada germinativa se desenvolvem os músculos, ossos e o sistema circulatório?",
+                options: ["A) Ectoderme", "B) Endoderme", "C) Mesoderme", "D) Notocorda"],
+                correctAnswerIndex: 2,
+                prize: 10000000,
+                explanation: "A **mesoderme** é a camada germinativa média que dá origem a uma vasta gama de tecidos e órgãos, incluindo músculos, ossos, cartilagens, sistema circulatório, rins e gônadas."
             }
         ];
 
-
-        // Escada de prêmios (em Reais)
-        const prizeLadder = [
-            0,        // Início
-            1000,     // 1ª pergunta
-            2000,
-            3000,
-            4000,
-            5000,
-            10000,    // 6ª pergunta - Nível de segurança 1
-            20000,
-            30000,
-            40000,
-            50000,
-            100000,   // 11ª pergunta - Nível de segurança 2
-            200000,
-            300000,
-            400000,
-            500000,
-            1000000   // 16ª pergunta - Milhão!
-        ];
-
-        // Níveis de segurança (índices no prizeLadder)
-        const safePrizeLevels = [0, 6, 11]; // R$0, R$10.000, R$100.000
-
+        // Variáveis de estado do jogo
+        let shuffledQuestions = [];
         let currentQuestionIndex = 0;
-        let currentPrizeIndex = 0; // Índice na escada de prêmios
-        let selectedOption = null;
+        let currentPrize = 0;
         let gameStarted = false;
-        let fiftyFiftyUsed = false;
-        let skipUsed = false;
-        let universitariosUsed = false;
-        let phoneAFriendUsed = false;
-        let timerInterval;
-        let timeLeft = 30; // Tempo em segundos para cada pergunta
-        let selectedCharacter = 'male'; // Default character
+        let canAnswer = true; // Controla se o usuário pode clicar nas opções
+        let lifeline5050Used = false;
+        let lifelineSkipUsed = false;
+        let lifelineAudienceUsed = false;
+        let lifelineExpertUsed = false; // New lifeline state
+        let timer;
+        let timeLeft = 30; // Tempo em segundos por pergunta
+        let TIME_LIMIT = 30; // Constante para o tempo limite, ajustada pela dificuldade
+        const EXPLANATION_DELAY = 4000; // Tempo em milissegundos para exibir a explicação antes de avançar
 
-        // Elementos do DOM
-        const startScreen = document.getElementById('startScreen');
-        const gameScreen = document.getElementById('gameScreen');
-        const endScreen = document.getElementById('endScreen');
-        const leaderboardScreen = document.getElementById('leaderboardScreen');
+        // Variáveis de áudio removidas
+
+        // Referências aos elementos do DOM
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const gameContainer = document.getElementById('gameContainer');
         const startButton = document.getElementById('startButton');
-        const playAgainEndButton = document.getElementById('playAgainEndButton');
-        const viewLeaderboardButton = document.getElementById('viewLeaderboardButton');
-        const backToStartButton = document.getElementById('backToStartButton');
+        const showScoresButton = document.getElementById('showScoresButton');
+        const difficultyButtons = document.querySelectorAll('.difficulty-button');
+        // Botões de áudio removidos do DOM no HTML, então não precisamos de referências aqui.
+
         const questionText = document.getElementById('questionText');
         const optionsContainer = document.getElementById('optionsContainer');
-        const feedbackMessage = document.getElementById('feedbackMessage');
-        const prizeDisplay = document.getElementById('prizeDisplay');
-        const finalPrizeDisplay = document.getElementById('finalPrizeDisplay');
-        const confirmButton = document.getElementById('confirmButton');
-        const stopButton = document.getElementById('stopButton');
-        const nextButton = document.getElementById('nextButton');
-        const playAgainButton = document.getElementById('playAgainButton');
-        const backgroundMusic = document.getElementById('backgroundMusic');
-        const silvioVoiceCorrect = document.getElementById('silvioVoiceCorrect');
-        const silvioVoiceIncorrect = document.getElementById('silvioVoiceIncorrect');
-        const silvioVoiceQuestion = document.getElementById('silvioVoiceQuestion');
-        const buttonClickSound = document.getElementById('buttonClickSound');
-        const lifelineSound = document.getElementById('lifelineSound');
-        const timerSound = document.getElementById('timerSound');
-        const phoneRingSound = document.getElementById('phoneRingSound');
-        const gameOverSound = document.getElementById('gameOverSound');
-        const fiftyFiftyButton = document.getElementById('fiftyFiftyButton');
-        const skipButton = document.getElementById('skipButton');
-        const universitariosButton = document.getElementById('universitariosButton');
-        const phoneAFriendButton = document.getElementById('phoneAFriendButton');
-        const universitariosResults = document.getElementById('universitariosResults');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const confettiContainer = document.getElementById('confettiContainer');
-        const prizeLadderContainer = document.getElementById('prizeLadderContainer');
-        const timerCircle = document.getElementById('timerCircle');
-        const phoneAFriendModal = document.getElementById('phoneAFriendModal');
-        const phoneAFriendMessage = document.getElementById('phoneAFriendMessage');
-        const closePhoneAFriendModal = document.getElementById('closePhoneAFriendModal');
-        const characterOptions = document.querySelectorAll('.character-option');
+        const currentPrizeElement = document.getElementById('currentPrize');
+        const messageElement = document.getElementById('message');
+        const nextQuestionButton = document.getElementById('nextQuestionButton');
+        const lifeline5050Button = document.getElementById('lifeline5050');
+        const lifelineSkipButton = document.getElementById('lifelineSkip');
+        const lifelineAudienceButton = document.getElementById('lifelineAudience');
+        const lifelineExpertButton = document.getElementById('lifelineExpert'); // New lifeline button
+        const gameOverModal = document.getElementById('gameOverModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const nicknameInputContainer = document.getElementById('nicknameInputContainer');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const saveScoreButton = document.getElementById('saveScoreButton');
+        const modalRestartButton = document.getElementById('modalRestartButton');
+        const modalHomeButton = document.getElementById('modalHomeButton');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerProgressBar = document.getElementById('timerProgressBar');
+        const timerText = document.getElementById('timerText');
+        const questionCounter = document.getElementById('questionCounter');
+        const highScoresModal = document.getElementById('highScoresModal');
+        const loadingScores = document.getElementById('loadingScores');
+        const highScoresList = document.getElementById('highScoresList');
+        const closeScoresButton = document.getElementById('closeScoresButton');
 
-
-        // Função para tocar áudio, reiniciando se já estiver tocando para evitar sobreposição
-        function playAudio(audioElement) {
-            audioElement.pause(); // Pausa para garantir que comece do zero
-            audioElement.currentTime = 0; // Reinicia o áudio
-            audioElement.play().catch(e => console.error("Erro ao tocar áudio:", e));
+        // Função para embaralhar um array (algoritmo de Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Troca elementos
+            }
+            return array;
         }
 
-        // Event Listeners para os botões do jogo
-        startButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            startGame();
-        });
+        // Função para simular atraso (para chamadas de API)
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
 
-        confirmButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            clearTimer(); // Para o timer ao confirmar
-            checkAnswer();
-        });
+        // Funções de inicialização de áudio removidas
 
-        stopButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            clearTimer(); // Para o timer ao parar o jogo
-            stopGame();
-        });
-
-        nextButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            currentQuestionIndex++;
-            currentPrizeIndex++;
-            if (currentQuestionIndex < questions.length) {
-                loadQuestion(); // Carrega a próxima pergunta
-            } else {
-                endGame(true, prizeLadder[prizeLadder.length - 1]); // Se todas as perguntas foram respondidas, o jogador ganha o milhão
-            }
-        });
-
-        playAgainButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            resetGame();
-            startGame();
-        });
-
-        playAgainEndButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            resetGame();
-            startGame();
-        });
-
-        viewLeaderboardButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            showLeaderboard();
-        });
-
-        backToStartButton.addEventListener('click', () => {
-            playAudio(buttonClickSound);
-            showStartScreen();
-        });
-
-        // Event Listeners para as ajudas (lifelines)
-        fiftyFiftyButton.addEventListener('click', () => {
-            if (!fiftyFiftyUsed && gameStarted && selectedOption === null) {
-                playAudio(lifelineSound);
-                fiftyFiftyButton.classList.add('used-animation'); // Adiciona animação
-                useFiftyFifty();
-                setTimeout(() => fiftyFiftyButton.classList.remove('used-animation'), 500); // Remove animação
-            }
-        });
-
-        skipButton.addEventListener('click', () => {
-            if (!skipUsed && gameStarted && selectedOption === null) {
-                playAudio(lifelineSound);
-                skipButton.classList.add('used-animation');
-                clearTimer(); // Limpa o timer ao pular a pergunta
-                useSkip();
-                setTimeout(() => skipButton.classList.remove('used-animation'), 500);
-            }
-        });
-
-        universitariosButton.addEventListener('click', () => {
-            if (!universitariosUsed && gameStarted && selectedOption === null) {
-                playAudio(lifelineSound);
-                universitariosButton.classList.add('used-animation');
-                useUniversitarios();
-                setTimeout(() => universitariosButton.classList.remove('used-animation'), 500);
-            }
-        });
-
-        phoneAFriendButton.addEventListener('click', () => {
-            if (!phoneAFriendUsed && gameStarted && selectedOption === null) {
-                playAudio(phoneRingSound);
-                phoneAFriendButton.classList.add('used-animation');
-                usePhoneAFriend();
-                setTimeout(() => phoneAFriendButton.classList.remove('used-animation'), 500);
-            }
-        });
-
-        closePhoneAFriendModal.addEventListener('click', () => {
-            phoneAFriendModal.classList.remove('show'); // Esconde o modal com transição
-            setTimeout(() => phoneAFriendModal.classList.add('hidden'), 300); // Esconde após a transição
-        });
-
-        // Controle de volume para todos os elementos de áudio
-        volumeSlider.addEventListener('input', (event) => {
-            const volume = event.target.value;
-            backgroundMusic.volume = volume;
-            silvioVoiceCorrect.volume = volume;
-            silvioVoiceIncorrect.volume = volume;
-            silvioVoiceQuestion.volume = volume;
-            buttonClickSound.volume = volume;
-            lifelineSound.volume = volume;
-            timerSound.volume = volume;
-            phoneRingSound.volume = volume;
-            gameOverSound.volume = volume;
-        });
-
-        // Seleção de personagem
-        characterOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelector('.character-option.selected-char').classList.remove('selected-char');
-                option.classList.add('selected-char');
-                selectedCharacter = option.dataset.character;
+        // Inicializa o jogo e adiciona event listeners
+        async function initGame() {
+            if (startButton) startButton.addEventListener('click', async () => {
+                startGame();
             });
-        });
 
-        // Funções de Fluxo do Jogo
-
-        // Mostra uma tela específica e esconde as outras
-        function showScreen(screenToShow) {
-            const screens = [startScreen, gameScreen, endScreen, leaderboardScreen];
-            screens.forEach(screen => {
-                if (screen === screenToShow) {
-                    screen.classList.remove('hidden');
-                } else {
-                    screen.classList.add('hidden');
-                }
+            if (showScoresButton) showScoresButton.addEventListener('click', async () => {
+                showHighScores();
             });
+
+            difficultyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    difficultyButtons.forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                    const selectedDifficulty = button.dataset.difficulty;
+                    switch (selectedDifficulty) {
+                        case 'easy': TIME_LIMIT = 45; break;
+                        case 'medium': TIME_LIMIT = 30; break;
+                        case 'hard': TIME_LIMIT = 15; break;
+                    }
+                    if (timerText) timerText.textContent = TIME_LIMIT;
+                });
+            });
+
+            // Event listeners para toggle de música e efeitos sonoros removidos
+
+            if (lifeline5050Button) lifeline5050Button.addEventListener('click', () => {
+                useLifeline5050();
+            });
+            if (lifelineSkipButton) lifelineSkipButton.addEventListener('click', () => {
+                useLifelineSkip();
+            });
+            if (lifelineAudienceButton) lifelineAudienceButton.addEventListener('click', () => {
+                useLifelineAudience();
+            });
+            if (lifelineExpertButton) lifelineExpertButton.addEventListener('click', async () => {
+                await useLifelineExpert();
+            });
+
+            if (saveScoreButton) saveScoreButton.addEventListener('click', saveHighScore);
+            if (modalRestartButton) modalRestartButton.addEventListener('click', () => {
+                startGame();
+            });
+            if (modalHomeButton) modalHomeButton.addEventListener('click', () => {
+                showWelcomeScreen();
+            });
+            if (closeScoresButton) closeScoresButton.addEventListener('click', () => {
+                if (highScoresModal) highScoresModal.classList.add('hidden');
+                showWelcomeScreen();
+            });
+
+            showWelcomeScreen();
         }
 
-        // Exibe a tela inicial e reinicia o jogo
-        function showStartScreen() {
-            resetGame();
-            showScreen(startScreen);
+        // Funções de toggle de música e efeitos sonoros removidas
+
+        // Exibe a tela de boas-vindas
+        async function showWelcomeScreen() {
+            if (gameContainer) gameContainer.classList.add('hidden');
+            if (gameOverModal) gameOverModal.classList.add('hidden');
+            if (highScoresModal) highScoresModal.classList.add('hidden');
+            if (welcomeScreen) welcomeScreen.classList.remove('hidden');
+
+            // Parar músicas removido
         }
 
-        // Inicia o jogo
-        function startGame() {
-            showScreen(gameScreen);
-            prizeLadderContainer.classList.remove('hidden'); // Mostra a escada de prêmios
-            backgroundMusic.play().catch(e => console.error("Erro ao tocar música de fundo:", e));
+        // Inicia ou reinicia o jogo
+        async function startGame() {
             gameStarted = true;
-            loadQuestion();
-            updateLifelineButtons(); // Atualiza o estado dos botões de ajuda
-            confettiContainer.classList.add('hidden'); // Esconde confetes de jogos anteriores
-            renderPrizeLadder(); // Renderiza a escada de prêmios inicial
+            currentQuestionIndex = 0;
+            currentPrize = 0;
+            lifeline5050Used = false;
+            lifelineSkipUsed = false;
+            lifelineAudienceUsed = false;
+            lifelineExpertUsed = false; // Reset expert lifeline
+            shuffledQuestions = shuffleArray([...questions]); // Cria uma cópia e embaralha
+
+            if (currentPrizeElement) currentPrizeElement.textContent = `R$ 0`;
+            if (messageElement) messageElement.textContent = '';
+            if (nextQuestionButton) nextQuestionButton.classList.add('hidden');
+            if (welcomeScreen) welcomeScreen.classList.add('hidden');
+            if (gameOverModal) gameOverModal.classList.add('hidden');
+            if (highScoresModal) highScoresModal.classList.add('hidden');
+            if (gameContainer) gameContainer.classList.remove('hidden');
+
+            // Parar músicas removido
+
+            // Habilita e reinicia as cores dos botões de ajuda
+            if (lifeline5050Button) { lifeline5050Button.disabled = false; lifeline5050Button.classList.remove('bg-gray-700'); }
+            if (lifelineSkipButton) { lifelineSkipButton.disabled = false; lifelineSkipButton.classList.remove('bg-gray-700'); }
+            if (lifelineAudienceButton) { lifelineAudienceButton.disabled = false; lifelineAudienceButton.classList.remove('bg-gray-700'); }
+            if (lifelineExpertButton) { lifelineExpertButton.disabled = false; lifelineExpertButton.classList.remove('bg-gray-700'); }
+
+            // Tocar som de início de jogo removido
+            // Iniciar música de fundo removido
+
+            displayQuestion();
         }
 
-        // Carrega a pergunta atual e suas opções
-        function loadQuestion() {
-            selectedOption = null; // Reseta a opção selecionada
-            feedbackMessage.textContent = ''; // Limpa mensagens de feedback
-            confirmButton.classList.add('hidden'); // Esconde o botão de confirmar
-            stopButton.classList.remove('hidden'); // Mostra o botão de parar
-            nextButton.classList.add('hidden'); // Garante que o botão de próxima pergunta esteja escondido
-            playAgainButton.classList.add('hidden'); // Garante que o botão de jogar novamente esteja escondido
-            universitariosResults.classList.add('hidden'); // Esconde resultados dos universitários
-            phoneAFriendModal.classList.add('hidden'); // Esconde o modal do telefone
+        // Exibe a pergunta atual
+        async function displayQuestion() {
+            canAnswer = true; // Permite que o usuário responda
+            const q = shuffledQuestions[currentQuestionIndex];
+            if (questionText) questionText.textContent = q.question;
+            if (optionsContainer) optionsContainer.innerHTML = ''; // Limpa as opções anteriores
 
-            animatePrizeDisplay(prizeLadder[currentPrizeIndex]); // Anima o prêmio atual
-            updatePrizeLadderHighlight(); // Atualiza o destaque na escada de prêmios
+            if (questionCounter) questionCounter.textContent = `Pergunta ${currentQuestionIndex + 1} de ${shuffledQuestions.length}`;
 
-            const questionData = questions[currentQuestionIndex];
-            questionText.textContent = questionData.question;
-            optionsContainer.innerHTML = ''; // Limpa as opções anteriores
-
-            // Anima a entrada da caixa de pergunta
-            questionText.classList.remove('show');
-            setTimeout(() => {
-                questionText.classList.add('show');
-            }, 50);
-
-            // Cria e anima os botões de opção
-            questionData.options.forEach((option, index) => {
+            q.options.forEach((option, index) => {
                 const button = document.createElement('button');
                 button.textContent = option;
-                button.classList.add('option-button');
-                button.addEventListener('click', () => selectOption(button, option));
-                optionsContainer.appendChild(button);
-
-                setTimeout(() => {
-                    button.classList.add('show');
-                }, 100 + index * 100); // Atraso para animação em cascata
+                button.classList.add('option-button', 'block');
+                button.dataset.index = index; // Armazena o índice da opção
+                button.addEventListener('click', () => checkAnswer(index));
+                if (optionsContainer) optionsContainer.appendChild(button);
             });
+            if (messageElement) messageElement.textContent = ''; // Limpa mensagens anteriores
 
-            // Reseta o estado visual de todos os botões de opção
-            document.querySelectorAll('.option-button').forEach(btn => {
-                btn.disabled = false;
-                btn.classList.remove('selected', 'correct', 'incorrect', 'disabled', 'hidden');
-            });
+            // Tocar música de tensão removido
 
-            playAudio(silvioVoiceQuestion); // Toca o áudio de introdução da pergunta
-            startTimer(); // Inicia o timer
+            startTimer(); // Inicia o temporizador para a nova pergunta
         }
 
-        // Anima a exibição do prêmio atual
-        function animatePrizeDisplay(targetPrize) {
-            let current = parseInt(prizeDisplay.textContent.replace(/\D/g, '')) || 0;
-            const step = Math.ceil(Math.abs(targetPrize - current) / 50); // Calcula o passo da animação
-            const increment = targetPrize > current ? step : -step;
-
-            const update = () => {
-                current += increment;
-                // Garante que o valor não ultrapasse o alvo e para a animação
-                if ((increment > 0 && current >= targetPrize) || (increment < 0 && current <= targetPrize)) {
-                    current = targetPrize;
-                    prizeDisplay.textContent = current.toLocaleString('pt-BR');
-                    return;
-                }
-                prizeDisplay.textContent = current.toLocaleString('pt-BR');
-                requestAnimationFrame(update); // Continua a animação
-            };
-            requestAnimationFrame(update);
-        }
-
-        // Renderiza a escada de prêmios visual
-        function renderPrizeLadder() {
-            prizeLadderContainer.innerHTML = '';
-            // Itera de trás para frente para exibir do maior para o menor prêmio
-            for (let i = prizeLadder.length - 1; i >= 0; i--) {
-                const prize = prizeLadder[i];
-                const item = document.createElement('div');
-                item.classList.add('prize-ladder-item');
-                item.textContent = `R$ ${prize.toLocaleString('pt-BR')}`;
-                if (safePrizeLevels.includes(i)) {
-                    item.classList.add('safe-level'); // Adiciona classe para níveis de segurança
-                }
-                item.dataset.index = i; // Armazena o índice para destaque
-                prizeLadderContainer.appendChild(item);
-            }
-            updatePrizeLadderHighlight(); // Atualiza o destaque inicial
-        }
-
-        // Atualiza o destaque na escada de prêmios para o prêmio atual
-        function updatePrizeLadderHighlight() {
-            document.querySelectorAll('.prize-ladder-item').forEach(item => {
-                item.classList.remove('current-prize');
-                if (parseInt(item.dataset.index) === currentPrizeIndex) {
-                    item.classList.add('current-prize');
-                    // Rola para o item atual na escada de prêmios
-                    setTimeout(() => {
-                        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }, 100);
-                }
-            });
-        }
-
-        // Inicia o timer da pergunta
+        // Inicia o temporizador
         function startTimer() {
-            clearTimer(); // Limpa qualquer timer anterior
-            timeLeft = 30; // Reseta o tempo
-            updateTimerDisplay(); // Atualiza a exibição do timer
-            timerSound.pause(); // Garante que o som do timer esteja parado no início
+            clearInterval(timer); // Limpa qualquer timer anterior
+            timeLeft = TIME_LIMIT;
+            if (timerText) timerText.textContent = timeLeft;
+            if (timerDisplay) timerDisplay.classList.remove('warning'); // Remove o estilo de aviso
+            if (timerProgressBar) timerProgressBar.style.width = '100%'; // Reset progress bar
 
-            timerInterval = setInterval(() => {
+            timer = setInterval(() => {
                 timeLeft--;
-                updateTimerDisplay();
+                if (timerText) timerText.textContent = timeLeft;
+                const progress = (timeLeft / TIME_LIMIT) * 100;
+                if (timerProgressBar) timerProgressBar.style.width = `${progress}%`;
 
-                // Toca o som do timer nos últimos 10 segundos
-                if (timeLeft === 10) {
-                    playAudio(timerSound);
-                } else if (timeLeft < 10 && timerSound.paused) {
-                    // Garante que o som continue tocando se o usuário pausar e despausar
-                    playAudio(timerSound);
+                if (timeLeft <= 10 && timeLeft > 0) { // Adiciona aviso visual nos últimos 10 segundos
+                    if (timerDisplay) timerDisplay.classList.add('warning');
+                } else if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer(-1); // Resposta incorreta se o tempo acabar
                 }
-                
-                if (timeLeft <= 0) {
-                    clearTimer();
-                    timerSound.pause(); // Para o som do timer
-                    feedbackMessage.textContent = 'Tempo esgotado! Que pena!';
-                    feedbackMessage.style.color = '#e74c3c';
-                    const questionData = questions[currentQuestionIndex];
-                    const allOptionButtons = document.querySelectorAll('.option-button');
-                    allOptionButtons.forEach(btn => btn.disabled = true); // Desabilita todas as opções
-                    // Destaca a resposta correta
-                    allOptionButtons.forEach(btn => {
-                        if (btn.textContent === questionData.correctAnswer) {
-                            btn.classList.add('correct');
-                        }
-                    });
-                    // Calcula o prêmio final com base no último nível de segurança alcançado
-                    let finalPrize = 0;
-                    for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
-                        if (currentPrizeIndex >= safePrizeLevels[i]) {
-                            finalPrize = prizeLadder[safePrizeLevels[i]];
-                            break;
-                        }
-                    }
-                    endGame(false, finalPrize); // Termina o jogo
-                }
-            }, 1000); // A cada 1 segundo
+            }, 1000);
         }
 
-        // Atualiza a exibição visual do timer
-        function updateTimerDisplay() {
-            const percentage = (timeLeft / 30) * 100;
-            timerCircle.style.setProperty('--timer-progress', `${percentage}%`);
-            timerCircle.textContent = timeLeft;
+        // Para o temporizador
+        function stopTimer() {
+            clearInterval(timer);
+            if (timerDisplay) timerDisplay.classList.remove('warning');
+        }
 
-            // Altera a cor do timer com base no tempo restante
-            timerCircle.classList.remove('warning', 'danger');
-            if (timeLeft <= 10 && timeLeft > 5) {
-                timerCircle.classList.add('warning');
-            } else if (timeLeft <= 5 && timeLeft > 0) {
-                timerCircle.classList.add('danger');
+        // Verifica a resposta selecionada
+        async function checkAnswer(selectedIndex) {
+            if (!canAnswer) return; // Impede múltiplos cliques
+            stopTimer(); // Para o temporizador ao responder
+
+            // Parar música de tensão removido
+
+            canAnswer = false; // Bloqueia novas respostas
+            const q = shuffledQuestions[currentQuestionIndex];
+            const allOptionButtons = optionsContainer ? optionsContainer.querySelectorAll('.option-button') : [];
+
+            // Adiciona classes para feedback visual
+            allOptionButtons.forEach((button, index) => {
+                if (index === q.correctAnswerIndex) {
+                    button.classList.add('correct');
+                } else if (index === selectedIndex) {
+                    button.classList.add('incorrect');
+                }
+                button.disabled = true; // Desabilita todos os botões após a resposta
+            });
+
+            // Exibe a explicação
+            if (messageElement) messageElement.innerHTML = `**${selectedIndex === q.correctAnswerIndex ? 'Correto! 🎉' : 'Incorreto. 😔'}**<br>${q.explanation}`;
+
+            if (selectedIndex === q.correctAnswerIndex) {
+                // Tocar som de correto removido
+                currentPrize += q.prize;
+                if (currentPrizeElement) currentPrizeElement.textContent = `R$ ${currentPrize.toLocaleString('pt-BR')}`;
+                // Add pulse animation to prize
+                if (currentPrizeElement) {
+                    currentPrizeElement.classList.add('prize-pulse');
+                    setTimeout(() => {
+                        currentPrizeElement.classList.remove('prize-pulse');
+                    }, 500); // Remove after animation
+                }
+
+                if (currentQuestionIndex < shuffledQuestions.length - 1) {
+                    // Avança para a próxima pergunta após um delay
+                    setTimeout(() => {
+                        loadNextQuestion();
+                    }, EXPLANATION_DELAY);
+                } else {
+                    // Se for a última pergunta e acertou, encerra o jogo com vitória
+                    setTimeout(() => {
+                        endGame(true);
+                    }, EXPLANATION_DELAY);
+                }
+            } else {
+                // Tocar som de incorreto removido
+                setTimeout(() => {
+                    endGame(false); // Perdeu o jogo após o delay da explicação
+                }, EXPLANATION_DELAY);
             }
         }
 
-        // Limpa o intervalo do timer
-        function clearTimer() {
-            clearInterval(timerInterval);
-            timerSound.pause(); // Pausa o som do timer
-            timerSound.currentTime = 0; // Reseta o áudio do timer
+        // Carrega a próxima pergunta
+        function loadNextQuestion() {
+            currentQuestionIndex++;
+            if (nextQuestionButton) nextQuestionButton.classList.add('hidden'); // Garante que o botão de próxima pergunta esteja escondido
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                displayQuestion();
+            } else {
+                endGame(true); // Todas as perguntas respondidas
+            }
         }
 
-        // Seleciona uma opção de resposta
-        function selectOption(button, option) {
-            document.querySelectorAll('.option-button').forEach(btn => {
-                btn.classList.remove('selected'); // Remove seleção de outras opções
+        // Usa a ajuda 50/50
+        function useLifeline5050() {
+            if (lifeline5050Used || !canAnswer) return;
+
+            // Tocar som de ajuda removido
+            lifeline5050Used = true;
+            if (lifeline5050Button) {
+                lifeline5050Button.disabled = true;
+                lifeline5050Button.classList.add('bg-gray-700'); // Muda a cor para indicar uso
+            }
+
+            const q = shuffledQuestions[currentQuestionIndex];
+            const allOptionButtons = optionsContainer ? optionsContainer.querySelectorAll('.option-button') : [];
+            const incorrectOptions = [];
+
+            allOptionButtons.forEach((button, index) => {
+                if (index !== q.correctAnswerIndex) {
+                    incorrectOptions.push(index);
+                }
             });
-            button.classList.add('selected'); // Adiciona classe de selecionado
-            selectedOption = option;
-            confirmButton.classList.remove('hidden'); // Mostra o botão de confirmar
-            stopButton.classList.remove('hidden'); // Garante que o botão de parar esteja visível
+
+            // Remove duas opções incorretas aleatoriamente
+            const optionsToRemove = shuffleArray(incorrectOptions).slice(0, 2);
+
+            optionsToRemove.forEach(index => {
+                if (allOptionButtons[index]) {
+                    allOptionButtons[index].style.opacity = '0.3'; // Diminui a opacidade
+                    allOptionButtons[index].disabled = true; // Desabilita
+                }
+            });
+
+            if (messageElement) messageElement.textContent = 'Ajuda 50/50 utilizada! Duas opções incorretas foram removidas.';
         }
 
-        // Verifica se a resposta selecionada está correta
-        function checkAnswer() {
-            if (!selectedOption) {
-                feedbackMessage.textContent = 'Por favor, selecione uma opção!';
+        // Usa a ajuda Pular Pergunta
+        function useLifelineSkip() {
+            if (lifelineSkipUsed || !canAnswer) return;
+
+            // Tocar som de ajuda removido
+            lifelineSkipUsed = true;
+            if (lifelineSkipButton) {
+                lifelineSkipButton.disabled = true;
+                lifelineSkipButton.classList.add('bg-gray-700'); // Muda a cor para indicar uso
+            }
+
+            const skipCost = Math.floor(currentPrize * 0.10); // 10% of current prize
+            currentPrize = Math.max(0, currentPrize - skipCost); // Ensure prize doesn't go negative
+
+            if (messageElement) messageElement.textContent = `Ajuda Pular Pergunta utilizada! R$ ${skipCost.toLocaleString('pt-BR')} deduzidos. Pulando para a próxima questão.`;
+            if (currentPrizeElement) currentPrizeElement.textContent = `R$ ${currentPrize.toLocaleString('pt-BR')}`; // Update prize display with deduction
+            // Add pulse animation to prize after deduction
+            if (currentPrizeElement) {
+                currentPrizeElement.classList.add('prize-pulse');
+                setTimeout(() => {
+                    currentPrizeElement.classList.remove('prize-pulse');
+                }, 500); // Remove after animation
+            }
+
+            stopTimer(); // Para o timer ao pular
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 1500); // Dá um pequeno delay para a mensagem ser lida
+        }
+
+        // Usa a ajuda "Perguntar aos Universitários"
+        function useLifelineAudience() {
+            if (lifelineAudienceUsed || !canAnswer) return;
+
+            // Tocar som de ajuda removido
+            lifelineAudienceUsed = true;
+            if (lifelineAudienceButton) {
+                lifelineAudienceButton.disabled = true;
+                lifelineAudienceButton.classList.add('bg-gray-700'); // Muda a cor para indicar uso
+            }
+
+            const q = shuffledQuestions[currentQuestionIndex];
+            const allOptionButtons = optionsContainer ? optionsContainer.querySelectorAll('.option-button') : [];
+
+            // Simulate audience votes
+            const votes = Array(q.options.length).fill(0);
+            const correctIndex = q.correctAnswerIndex;
+
+            // Give correct answer a high percentage (e.g., 60-80%)
+            let remainingPercentage = 100;
+            const correctVote = Math.floor(Math.random() * 21) + 60; // 60-80%
+            votes[correctIndex] = correctVote;
+            remainingPercentage -= correctVote;
+
+            // Distribute remaining percentage among incorrect answers
+            const incorrectIndices = Array.from({ length: q.options.length }, (_, i) => i)
+                                        .filter(i => i !== correctIndex);
+
+            // Distribute remaining votes, ensuring at least 1% for each remaining option
+            let distributedVotes = 0;
+            incorrectIndices.forEach(idx => {
+                const minVote = 1; // Minimum 1%
+                let vote = Math.floor(Math.random() * (remainingPercentage - (incorrectIndices.length - 1 - distributedVotes) * minVote));
+                if (vote < minVote) vote = minVote; // Ensure minimum
+                votes[idx] = vote;
+                remainingPercentage -= vote;
+                distributedVotes++;
+            });
+
+            // If there's any remaining percentage due to rounding, add it to one of the incorrect options
+            if (remainingPercentage > 0 && incorrectIndices.length > 0) {
+                votes[incorrectIndices[0]] += remainingPercentage;
+            }
+
+            // Ensure total sums to 100 (adjust if needed due to rounding)
+            const totalVotes = votes.reduce((sum, v) => sum + v, 0);
+            if (totalVotes !== 100) {
+                votes[correctIndex] += (100 - totalVotes);
+            }
+
+            allOptionButtons.forEach((button, index) => {
+                if (button) { // Ensure button exists before appending
+                    const percentage = votes[index];
+                    const span = document.createElement('span');
+                    span.classList.add('ml-4', 'font-bold');
+                    span.textContent = `${percentage}%`;
+                    button.appendChild(span);
+                }
+            });
+
+            if (messageElement) messageElement.textContent = 'Os universitários votaram! Veja os resultados.';
+        }
+
+        // Nova função: Usar ajuda "Perguntar ao Especialista" (LLM-powered)
+        async function useLifelineExpert() {
+            if (lifelineExpertUsed || !canAnswer) return;
+
+            // Tocar som de ajuda removido
+            lifelineExpertUsed = true;
+            if (lifelineExpertButton) {
+                lifelineExpertButton.disabled = true;
+                lifelineExpertButton.classList.add('bg-gray-700');
+            }
+
+            if (messageElement) {
+                messageElement.innerHTML = 'Consultando o especialista... <span class="loading-spinner"></span>';
+            }
+            stopTimer(); // Stop timer while LLM is thinking
+
+            const q = shuffledQuestions[currentQuestionIndex];
+            const prompt = `Dada a seguinte pergunta de embriologia e as opções de resposta, atue como um especialista e forneça a resposta mais provável e uma breve explicação. A sua resposta deve ser formatada como um objeto JSON com as chaves 'suggestedAnswer' (a letra da opção, ex: 'A', 'B', 'C', 'D') e 'explanation' (uma breve justificação).
+            Pergunta: '${q.question}'
+            Opções: ${q.options.join(', ')}`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = {
+                contents: chatHistory,
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "suggestedAnswer": { "type": "STRING" },
+                            "explanation": { "type": "STRING" }
+                        },
+                        "required": ["suggestedAnswer", "explanation"]
+                    }
+                }
+            };
+
+            const apiKey = typeof __gemini_api_key !== 'undefined' ? __gemini_api_key : ""; // Canvas will provide this at runtime
+            if (!apiKey) {
+                console.error("Gemini API key is not provided by the environment.");
+                if (messageElement) messageElement.textContent = 'Erro: Chave da API Gemini não disponível. Esta ajuda não pode ser usada.';
+                startTimer(); // Restart timer
                 return;
             }
 
-            clearTimer(); // Para o timer
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-            const questionData = questions[currentQuestionIndex];
-            const allOptionButtons = document.querySelectorAll('.option-button');
+            let expertResponse = null;
+            let retries = 0;
+            const MAX_RETRIES = 3;
+            const BASE_DELAY = 1000; // 1 second
 
-            allOptionButtons.forEach(btn => btn.disabled = true); // Desabilita todas as opções após a escolha
+            while (retries < MAX_RETRIES) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
 
-            confirmButton.classList.add('hidden'); // Esconde o botão de confirmar
-            stopButton.classList.add('hidden'); // Esconde o botão de parar
-
-            if (selectedOption === questionData.correctAnswer) {
-                feedbackMessage.textContent = 'Certa Resposta! Muito bem! Clique em "Próxima Pergunta" para continuar.';
-                feedbackMessage.style.color = '#2ecc71'; // Cor verde para resposta correta
-                playAudio(silvioVoiceCorrect); // Toca áudio de resposta correta
-                // Destaca a opção correta
-                allOptionButtons.forEach(btn => {
-                    if (btn.textContent === questionData.correctAnswer) {
-                        btn.classList.add('correct');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                });
-                nextButton.classList.remove('hidden'); // Mostra o botão para a próxima pergunta
-            } else {
-                feedbackMessage.textContent = `Que pena! A resposta correta era: ${questionData.correctAnswer}`;
-                feedbackMessage.style.color = '#e74c3c'; // Cor vermelha para resposta incorreta
-                playAudio(silvioVoiceIncorrect); // Toca áudio de resposta incorreta
-                // Destaca a opção selecionada como incorreta e a correta
-                allOptionButtons.forEach(btn => {
-                    if (btn.textContent === selectedOption) {
-                        btn.classList.add('incorrect');
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const json = result.candidates[0].content.parts[0].text;
+                        expertResponse = JSON.parse(json);
+                        break; // Success, exit loop
+                    } else {
+                        throw new Error("Unexpected API response structure.");
                     }
-                    if (btn.textContent === questionData.correctAnswer) {
-                        btn.classList.add('correct');
-                    }
-                });
-                // Calcula o prêmio final com base no último nível de segurança alcançado
-                let finalPrize = 0;
-                for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
-                    if (currentPrizeIndex >= safePrizeLevels[i]) {
-                        finalPrize = prizeLadder[safePrizeLevels[i]];
-                        break;
+                } catch (error) {
+                    console.error(`Error calling Gemini API (attempt ${retries + 1}):`, error);
+                    retries++;
+                    if (retries < MAX_RETRIES) {
+                        const delay = BASE_DELAY * Math.pow(2, retries); // Exponential backoff
+                        await sleep(delay);
                     }
                 }
-                endGame(false, finalPrize); // Termina o jogo
             }
-        }
 
-        // Função para parar o jogo voluntariamente
-        function stopGame() {
-            clearTimer(); // Para o timer
-            let finalPrize = 0;
-            // Calcula o prêmio final com base no último nível de segurança alcançado
-            for (let i = safePrizeLevels.length - 1; i >= 0; i--) {
-                if (currentPrizeIndex >= safePrizeLevels[i]) {
-                    finalPrize = prizeLadder[safePrizeLevels[i]];
-                    break;
+            if (expertResponse) {
+                let expertAnswerText = expertResponse.suggestedAnswer;
+                let expertExplanation = expertResponse.explanation;
+
+                // Simulate a small chance of the expert being wrong (e.g., 10% chance)
+                const isExpertWrong = Math.random() < 0.10; // 10% chance of being wrong
+
+                if (isExpertWrong) {
+                    // If the expert is supposed to be wrong, pick a random incorrect option
+                    const incorrectOptions = q.options.filter((_, idx) => idx !== q.correctAnswerIndex);
+                    const randomIncorrectOption = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
+                    expertAnswerText = randomIncorrectOption.charAt(0); // Get the letter (A, B, C, D)
+                    expertExplanation = "A minha análise sugere esta resposta, mas a embriologia pode ser traiçoeira! Verifique com cuidado."; // Generic wrong explanation
+                }
+
+                if (messageElement) {
+                    messageElement.innerHTML = `**O Especialista Sugere:** ${expertAnswerText}<br>_Explicação:_ ${expertExplanation}`;
+                }
+            } else {
+                if (messageElement) {
+                    messageElement.textContent = 'O especialista está ocupado... Tente novamente mais tarde ou confie nos seus conhecimentos!';
                 }
             }
-            feedbackMessage.textContent = `Você parou o jogo e levou: R$ ${finalPrize.toLocaleString('pt-BR')}!`;
-            feedbackMessage.style.color = '#f1c40f'; // Cor dourada para o prêmio
-            
-            setTimeout(() => {
-                endGame(false, finalPrize); // Vai para a tela final com o prêmio ganho
-            }, 2000);
+            startTimer(); // Restart timer after LLM response
         }
 
-        // Função para finalizar o jogo (vitória ou derrota)
-        function endGame(wonMillion, finalPrize = 0) {
-            clearTimer(); // Para o timer
-            gameScreen.classList.add('hidden'); // Esconde a tela do jogo
-            prizeLadderContainer.classList.add('hidden'); // Esconde a escada de prêmios
-            endScreen.classList.remove('hidden'); // Mostra a tela final
-            finalPrizeDisplay.textContent = `R$ ${finalPrize.toLocaleString('pt-BR')}`; // Exibe o prêmio final
-
-            // Solicita o nome do jogador para o placar de líderes
-            let playerName = prompt("Parabéns! Digite seu nome para o placar de líderes:", "Jogador");
-            if (!playerName || playerName.trim() === "") {
-                playerName = "Anônimo";
-            }
-            window.addScoreToLeaderboard(playerName, finalPrize); // Adiciona a pontuação ao placar
-
-            if (wonMillion) {
-                endScreen.querySelector('.title').textContent = 'PARABÉNS! VOCÊ GANHOU 1 MILHÃO DE REAIS!';
-                endScreen.querySelector('.title').classList.remove('text-green-400');
-                endScreen.querySelector('.title').classList.add('text-yellow-400');
-                triggerConfetti(); // Ativa a animação de confetes
-            } else {
-                endScreen.querySelector('.title').textContent = 'Fim de Jogo!';
-                endScreen.querySelector('.title').classList.remove('text-yellow-400');
-                endScreen.querySelector('.title').classList.add('text-green-400');
-                playAudio(gameOverSound); // Toca o som de game over
-            }
-
-            backgroundMusic.pause(); // Pausa a música de fundo
-            backgroundMusic.currentTime = 0; // Reinicia a música de fundo
-        }
-
-        // Mostra a tela do placar de líderes
-        function showLeaderboard() {
-            showScreen(leaderboardScreen);
-            window.fetchLeaderboard(); // Chama a função global para buscar o placar
-        }
-
-        // Reseta todas as variáveis e o estado do jogo para um novo início
-        function resetGame() {
-            clearTimer();
-            currentQuestionIndex = 0;
-            currentPrizeIndex = 0;
-            selectedOption = null;
+        // Finaliza o jogo
+        function endGame(won) {
             gameStarted = false;
-            fiftyFiftyUsed = false;
-            skipUsed = false;
-            universitariosUsed = false;
-            phoneAFriendUsed = false;
-            feedbackMessage.textContent = '';
-            // Esconde todas as telas e mostra a inicial
-            startScreen.classList.remove('hidden');
-            gameScreen.classList.add('hidden');
-            endScreen.classList.add('hidden');
-            leaderboardScreen.classList.add('hidden');
-            updateLifelineButtons(); // Reseta o estado dos botões de ajuda
-            confettiContainer.classList.add('hidden'); // Esconde os confetes
-            prizeDisplay.textContent = '0'; // Reseta o prêmio exibido
-            timerCircle.style.setProperty('--timer-progress', '100%'); // Reseta o timer visual
-            timerCircle.textContent = '';
-            timerCircle.classList.remove('warning', 'danger');
-            prizeLadderContainer.classList.add('hidden'); // Esconde a escada de prêmios
-        }
+            stopTimer(); // Garante que o timer pare
+            if (gameContainer) gameContainer.classList.add('hidden'); // Esconde o container do jogo
+            // Parar músicas removido
 
-        // Atualiza o estado (habilitado/desabilitado) dos botões de ajuda
-        function updateLifelineButtons() {
-            fiftyFiftyButton.disabled = fiftyFiftyUsed;
-            skipButton.disabled = skipUsed;
-            universitariosButton.disabled = universitariosUsed;
-            phoneAFriendButton.disabled = phoneAFriendUsed;
-
-            // Adiciona/remove classes para estilo visual de desabilitado
-            if (fiftyFiftyUsed) fiftyFiftyButton.classList.add('disabled'); else fiftyFiftyButton.classList.remove('disabled');
-            if (skipUsed) skipButton.classList.add('disabled'); else skipButton.classList.remove('disabled');
-            if (universitariosUsed) universitariosButton.classList.add('disabled'); else universitariosButton.classList.remove('disabled');
-            if (phoneAFriendUsed) phoneAFriendButton.classList.add('disabled'); else phoneAFriendButton.classList.remove('disabled');
-        }
-
-        // Lógica da ajuda 50/50
-        function useFiftyFifty() {
-            if (fiftyFiftyUsed || !gameStarted || selectedOption !== null) return;
-
-            fiftyFiftyUsed = true;
-            updateLifelineButtons();
-
-            const questionData = questions[currentQuestionIndex];
-            // Filtra as opções incorretas que não estão escondidas
-            const allOptions = Array.from(document.querySelectorAll('.option-button:not(.hidden)'));
-            const incorrectOptions = allOptions.filter(btn => btn.textContent !== questionData.correctAnswer);
-
-            let optionsToHide = [];
-            // Seleciona duas opções incorretas para esconder
-            while (optionsToHide.length < 2 && incorrectOptions.length > 0) {
-                const randomIndex = Math.floor(Math.random() * incorrectOptions.length);
-                optionsToHide.push(incorrectOptions.splice(randomIndex, 1)[0]);
-            }
-
-            // Esconde e desabilita as opções selecionadas
-            optionsToHide.forEach(btn => {
-                btn.classList.add('hidden');
-                btn.disabled = true;
-            });
-
-            feedbackMessage.textContent = 'Duas opções incorretas foram removidas!';
-            feedbackMessage.style.color = '#bdc3c7';
-        }
-
-        // Lógica da ajuda Pular Pergunta
-        function useSkip() {
-            if (skipUsed || !gameStarted || selectedOption !== null) return;
-
-            skipUsed = true;
-            updateLifelineButtons();
-
-            feedbackMessage.textContent = 'Pergunta pulada! Você não perde pontos.';
-            feedbackMessage.style.color = '#bdc3c7';
-
-            currentQuestionIndex++;
-            currentPrizeIndex++;
-            if (currentQuestionIndex < questions.length) {
-                loadQuestion(); // Carrega a próxima pergunta
+            if (won) {
+                // Tocar som de vitória removido
+                if (modalTitle) modalTitle.textContent = 'Parabéns! 🏆';
+                if (modalMessage) modalMessage.textContent = `Você ganhou o Show do Milhão de Embriologia com R$ ${currentPrize.toLocaleString('pt-BR')}!`;
+                triggerConfetti(); // Chama a função de confetes
             } else {
-                endGame(true, prizeLadder[prizeLadder.length - 1]); // Se pular a última, ganha o milhão
+                // Tocar som de derrota removido
+                if (modalTitle) modalTitle.textContent = 'Fim de Jogo 😔';
+                if (modalMessage) modalMessage.textContent = `Você acumulou R$ ${currentPrize.toLocaleString('pt-BR')}. Tente novamente!`;
+            }
+
+            // Show nickname input if score is positive
+            if (currentPrize > 0) {
+                if (nicknameInputContainer) nicknameInputContainer.classList.remove('hidden');
+                if (nicknameInput) nicknameInput.value = ''; // Clear previous nickname
+            } else {
+                if (nicknameInputContainer) nicknameInputContainer.classList.add('hidden');
+            }
+
+            if (gameOverModal) gameOverModal.classList.remove('hidden'); // Mostra o modal de fim de jogo
+        }
+
+        // Função para salvar a pontuação no Firestore
+        async function saveHighScore() {
+            if (!window.firebaseInitialized || !window.db) { // Use window.db
+                console.error("Firebase: Não inicializado. Não é possível salvar a pontuação.");
+                if (messageElement) messageElement.textContent = "Erro: Firebase não disponível para salvar pontuação. Verifique a consola para detalhes.";
+                return;
+            }
+
+            const nickname = nicknameInput ? nicknameInput.value.trim() : '';
+            if (nickname.length < 2) {
+                if (messageElement) messageElement.textContent = "Por favor, insira um nickname com pelo menos 2 caracteres.";
+                return;
+            }
+
+            if (saveScoreButton) saveScoreButton.disabled = true;
+            if (nicknameInput) nicknameInput.disabled = true;
+            if (messageElement) messageElement.textContent = "Salvando pontuação...";
+
+            try {
+                const highScoresCollectionRef = window.collection(window.db, `artifacts/${window.appId}/public/data/highScores`); // Use window.collection, window.db, window.appId
+                await window.addDoc(highScoresCollectionRef, { // Use window.addDoc
+                    nickname: nickname,
+                    score: currentPrize,
+                    timestamp: Date.now(),
+                    userId: window.getUserId() // Use window.getUserId
+                });
+                if (messageElement) messageElement.textContent = "Pontuação salva com sucesso! 🎉";
+                if (nicknameInputContainer) nicknameInputContainer.classList.add('hidden'); // Hide input after saving
+            } catch (error) {
+                console.error("Erro ao salvar pontuação:", error);
+                if (messageElement) messageElement.textContent = "Erro ao salvar pontuação. Tente novamente.";
+            } finally {
+                if (saveScoreButton) saveScoreButton.disabled = false;
+                if (nicknameInput) nicknameInput.disabled = false;
             }
         }
 
-        // Lógica da ajuda Universitários
-        function useUniversitarios() {
-            if (universitariosUsed || !gameStarted || selectedOption !== null) return;
+        // Função para exibir o placar de pontos
+        async function showHighScores() {
+            if (welcomeScreen) welcomeScreen.classList.add('hidden');
+            if (gameContainer) gameContainer.classList.add('hidden');
+            if (gameOverModal) gameOverModal.classList.add('hidden');
+            if (highScoresModal) highScoresModal.classList.remove('hidden');
+            if (loadingScores) loadingScores.classList.remove('hidden');
+            if (highScoresList) highScoresList.innerHTML = ''; // Clear previous scores
 
-            universitariosUsed = true;
-            updateLifelineButtons();
-            universitariosResults.innerHTML = ''; // Limpa resultados anteriores
-            universitariosResults.classList.remove('hidden'); // Mostra a área de resultados
+            // Parar músicas removido
 
-            const questionData = questions[currentQuestionIndex];
-            const options = questionData.options;
-            const correctAnswer = questionData.correctAnswer;
-
-            let votes = {};
-            let totalVotes = 100; // Total de porcentagem
-
-            // Define uma porcentagem alta para a resposta correta
-            let correctPercentage = Math.floor(Math.random() * (75 - 50 + 1)) + 50; // Entre 50% e 75%
-            votes[correctAnswer] = correctPercentage;
-            totalVotes -= correctPercentage;
-
-            let remainingOptions = options.filter(opt => opt !== correctAnswer);
-            let remainingVotesPerOption = 0;
-            if (remainingOptions.length > 0) {
-                remainingVotesPerOption = Math.floor(totalVotes / remainingOptions.length);
-            }
-            
-
-            // Distribui os votos restantes entre as opções incorretas
-            remainingOptions.forEach(opt => {
-                votes[opt] = remainingVotesPerOption;
-            });
-
-            // Adiciona o resto dos votos aleatoriamente
-            let remainder = totalVotes % remainingOptions.length;
-            if (remainder > 0 && remainingOptions.length > 0) {
-                for (let i = 0; i < remainder; i++) {
-                    const randomIndex = Math.floor(Math.random() * remainingOptions.length);
-                    votes[remainingOptions[randomIndex]]++;
-                }
+            if (!window.firebaseInitialized || !window.db) { // Use window.db
+                if (loadingScores) loadingScores.textContent = "Erro: Firebase não disponível para carregar placar.";
+                return;
             }
 
-            // Garante que a soma seja 100% (ajuste final se necessário devido a arredondamentos)
-            let currentSum = Object.values(votes).reduce((sum, val) => sum + val, 0);
-            if (currentSum !== 100) {
-                const diff = 100 - currentSum;
-                if (diff > 0 && remainingOptions.length > 0) {
-                    // Adiciona a diferença à opção correta ou a uma aleatória
-                    votes[correctAnswer] += diff;
-                } else if (diff < 0 && remainingOptions.length > 0) {
-                    // Remove a diferença de uma opção aleatória (não a correta)
-                    const randomIndex = Math.floor(Math.random() * remainingOptions.length);
-                    votes[remainingOptions[randomIndex]] += diff;
-                }
+            try {
+                const highScoresCollectionRef = window.collection(window.db, `artifacts/${window.appId}/public/data/highScores`); // Use window.collection, window.db, window.appId
+                // Removido window.orderBy("score", "desc") para evitar problemas de índice
+                const q = window.query(highScoresCollectionRef, window.limit(10)); // Use window.query, window.limit
+
+                window.onSnapshot(q, (snapshot) => { // Use window.onSnapshot
+                    if (loadingScores) loadingScores.classList.add('hidden');
+                    if (highScoresList) highScoresList.innerHTML = ''; // Clear for real-time updates
+                    if (snapshot.empty) {
+                        if (highScoresList) highScoresList.innerHTML = '<li class="text-gray-400">Nenhuma pontuação ainda. Seja o primeiro!</li>';
+                    } else {
+                        // Coleta os dados e ordena em JavaScript
+                        const scores = [];
+                        snapshot.forEach((doc) => {
+                            scores.push(doc.data());
+                        });
+
+                        // Ordena as pontuações em ordem decrescente (do maior para o menor)
+                        scores.sort((a, b) => b.score - a.score);
+
+                        scores.forEach((scoreData) => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = `
+                                <span>${scoreData.nickname}</span>
+                                <span>R$ ${scoreData.score.toLocaleString('pt-BR')}</span>
+                            `;
+                            if (highScoresList) highScoresList.appendChild(listItem);
+                        });
+                    }
+                }, (error) => {
+                    console.error("Error fetching real-time high scores:", error);
+                    if (loadingScores) loadingScores.textContent = "Erro ao carregar placar. Tente novamente.";
+                });
+
+            } catch (error) {
+                console.error("Error setting up high scores listener:", error);
+                if (loadingScores) loadingScores.textContent = "Erro ao carregar placar. Tente novamente.";
             }
-
-
-            // Exibe as barras de porcentagem
-            options.forEach(option => {
-                const percentage = votes[option] || 0;
-                const barContainer = document.createElement('div');
-                barContainer.classList.add('universitarios-bar-container');
-                barContainer.innerHTML = `
-                    <span>${option}:</span>
-                    <div class="flex-grow bg-gray-600 rounded-full overflow-hidden">
-                        <div class="universitarios-bar" style="width: 0%;"></div>
-                    </div>
-                    <span class="universitarios-percentage">${percentage}%</span>
-                `;
-                universitariosResults.appendChild(barContainer);
-
-                // Anima o preenchimento das barras
-                setTimeout(() => {
-                    barContainer.querySelector('.universitarios-bar').style.width = `${percentage}%`;
-                }, 100);
-            });
-
-            feedbackMessage.textContent = 'Os universitários deram suas opiniões!';
-            feedbackMessage.style.color = '#bdc3c7';
         }
 
-        // Lógica da ajuda Telefone para um Amigo
-        function usePhoneAFriend() {
-            if (phoneAFriendUsed || !gameStarted || selectedOption !== null) return;
-
-            phoneAFriendUsed = true;
-            updateLifelineButtons();
-
-            const questionData = questions[currentQuestionIndex];
-            const correctAnswer = questionData.correctAnswer;
-            const options = questionData.options;
-
-            let friendMessage = "";
-            const randomChance = Math.random();
-
-            // Diferentes níveis de certeza do amigo
-            if (randomChance < 0.7) { // 70% de chance de dar a resposta correta com confiança
-                friendMessage = `Tenho quase certeza que a resposta é a "${correctAnswer}".`;
-            } else if (randomChance < 0.9) { // 20% de chance de dar uma dica ambígua
-                const incorrectOptions = options.filter(opt => opt !== correctAnswer);
-                const hintOption = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
-                friendMessage = `Hmm, estou em dúvida entre a "${correctAnswer}" e a "${hintOption}". Mas se eu tivesse que chutar, iria na "${correctAnswer}".`;
-            } else { // 10% de chance de não saber
-                friendMessage = "Essa é bem difícil... Não consigo te ajudar nessa, desculpe!";
-            }
-
-            phoneAFriendMessage.textContent = friendMessage;
-            phoneAFriendModal.classList.remove('hidden');
-            phoneAFriendModal.classList.add('show'); // Mostra o modal com transição
-
-            feedbackMessage.textContent = 'Seu amigo te deu uma dica!';
-            feedbackMessage.style.color = '#bdc3c7';
-        }
-
-        // Ativa a animação de confetes
+        // Função para disparar confetes
         function triggerConfetti() {
-            confettiContainer.classList.remove('hidden');
-            for (let i = 0; i < 300; i++) {
+            const colors = ['#f0f', '#0ff', '#ff0', '#f00', '#0f0', '#00f'];
+            const numConfetti = 100;
+
+            for (let i = 0; i < numConfetti; i++) {
                 const confetti = document.createElement('div');
                 confetti.classList.add('confetti');
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.animationDelay = Math.random() * 4 + 's';
-                confetti.style.animationDuration = (3 + Math.random() * 3) + 's';
-                confetti.style.backgroundColor = ['#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#c0392b', '#27ae60'][Math.floor(Math.random() * 8)];
-                confettiContainer.appendChild(confetti);
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.transform = `translateY(-100px) rotateZ(${Math.random() * 360}deg)`;
+                document.body.appendChild(confetti);
+
+                // Remove o confete após a animação para limpar o DOM
+                confetti.addEventListener('animationend', () => {
+                    confetti.remove();
+                });
             }
-            // Limpa os confetes após um tempo
-            setTimeout(() => {
-                confettiContainer.innerHTML = '';
-                confettiContainer.classList.add('hidden');
-            }, 6000);
         }
 
-        // Garante que a música comece a tocar apenas após a interação do usuário e define o volume inicial
-        document.addEventListener('DOMContentLoaded', () => {
-            backgroundMusic.volume = volumeSlider.value;
-            silvioVoiceCorrect.volume = volumeSlider.value;
-            silvioVoiceIncorrect.volume = volumeSlider.value;
-            silvioVoiceQuestion.volume = volumeSlider.value;
-            buttonClickSound.volume = volumeSlider.value;
-            lifelineSound.volume = volumeSlider.value;
-            timerSound.volume = volumeSlider.value;
-            phoneRingSound.volume = volumeSlider.value;
-            gameOverSound.volume = volumeSlider.value;
-        });
-
+        // Inicia o jogo quando o Firebase estiver pronto
+        window.onFirebaseReady = initGame;
+        // If Firebase is already initialized (e.g., on subsequent runs in the same session), call initGame directly
+        if (window.firebaseInitialized) {
+            initGame();
+        }
     </script>
 </body>
 </html>
